@@ -27,9 +27,12 @@ It helps prevent violence and provides quick support in dangerous moments.
 * Firebase (database and authentication)
 * Google Maps API (location and map services)
 
+
 ## How to Run
 
 1. Clone the repository
 2. Install dependencies using `npm install`
-3. Run the project using `npm start`
-4. Open the app on an emulator or mobile device
+3. Make sure you have a React Native environment configured (Node.js, Expo or React Native CLI)
+4. Start the project with `npx expo start` or `npm start`
+5. Run the app on an emulator or a physical mobile device (Android/iOS)
+
