@@ -8,12 +8,17 @@ It helps prevent violence and provides quick support in dangerous moments.
 
 ## Features
 
-* User registration and login
-* Emergency button (SOS) with real-time location sharing
-* Register and view incidents (e.g., harassment, robbery)
-* Map with safe and dangerous areas
-* Emergency contacts management
-* Alerts and notifications about risky areas
+* User registration with basic information and emergency contacts
+* Emergency button (SOS) for quick alert and real-time location sharing
+* Real-time location tracking for trusted contacts
+* Incident reporting with description and automatic location
+* Interactive map showing safe and dangerous areas
+* View nearby incidents based on user location
+* Emergency contacts management (add, edit, remove)
+* Alerts and notifications when entering risky areas
+* Quick access to emergency services
+* Activity history of alerts and reported incidents
+
 
 ## Technologies
 
