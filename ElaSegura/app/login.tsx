@@ -12,6 +12,9 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { Image } from 'react-native';
+
+const MULHER_IMAGE = require('../assets/images/mulher.png');
 
 export default function Login() {
   const router = useRouter();
@@ -21,7 +24,7 @@ export default function Login() {
 
   const handleLogin = () => {
     // Navigate to home
-    router.replace('/');
+    router.replace('/home');
   };
 
   return (
@@ -33,11 +36,9 @@ export default function Login() {
       >
         <View style={styles.content}>
           <View style={styles.header}>
-            <View style={styles.iconBox}>
-              <MaterialCommunityIcons name="shield-check" size={60} color="#F35F74" />
-            </View>
-            <Text style={styles.title}>Bem-vinda de volta!</Text>
-            <Text style={styles.subtitle}>Faça login para continuar segura.</Text>
+            <Image source={MULHER_IMAGE} style={styles.brandImage} resizeMode="contain" />
+            <Text style={styles.brandTitle}>ElaSegura</Text>
+            <Text style={styles.brandSubtitle}>Sua segurança é importante 💜</Text>
           </View>
 
           <View style={styles.form}>
@@ -84,7 +85,7 @@ export default function Login() {
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>Ainda não tem uma conta? </Text>
-            <TouchableOpacity onPress={() => router.push('/register')}>
+            <TouchableOpacity onPress={() => router.push('/')}>
               <Text style={styles.footerLink}>Registre-se</Text>
             </TouchableOpacity>
           </View>
@@ -111,29 +112,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 40,
   },
-  iconBox: {
-    width: 100,
-    height: 100,
-    borderRadius: 30,
-    backgroundColor: '#FFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
+  brandImage: {
+    width: 150,
+    height: 150,
+    marginBottom: 10,
   },
-  title: {
-    fontSize: 28,
+  brandTitle: {
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#1A1A1A',
-    marginBottom: 8,
+    color: '#FF1493', // Deep Pink to match the screenshot
+    marginBottom: 5,
   },
-  subtitle: {
+  brandSubtitle: {
     fontSize: 16,
-    color: '#6A6A75',
+    color: '#1A1A1A',
+    fontWeight: '500',
   },
   form: {
     backgroundColor: '#FFF',
