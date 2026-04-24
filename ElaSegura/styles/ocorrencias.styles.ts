@@ -9,7 +9,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? 50 : 40,
+    paddingTop: Platform.OS === 'android' ? 70 : 80,
     paddingBottom: 20,
   },
   headerTitle: {
@@ -81,5 +81,89 @@ export const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  // Novos Estilos
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#FFF',
+    marginHorizontal: 20,
+    borderRadius: 20,
+    padding: 5,
+    marginBottom: 20,
+  },
+  tab: {
+    flex: 1,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 15,
+  },
+  activeTab: {
+    backgroundColor: '#F35F74',
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#9C97AC',
+  },
+  activeTabText: {
+    color: '#FFF',
+  },
+  filterContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 15,
+  },
+  filterLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#1A1A1A',
+    marginBottom: 10,
+  },
+  chipScroll: {
+    flexDirection: 'row',
+  },
+  filterChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#FFF',
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#EFEFEF',
+  },
+  activeFilterChip: {
+    backgroundColor: '#FDEEF1',
+    borderColor: '#F35F74',
+  },
+  filterChipText: {
+    fontSize: 13,
+    color: '#6A6A75',
+  },
+  activeFilterChipText: {
+    color: '#F35F74',
+    fontWeight: 'bold',
+  },
+  distanceBadge: {
+    backgroundColor: '#FFF0F2',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    marginTop: 8,
+  },
+  distanceText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#F35F74',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 50,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#9C97AC',
+    marginTop: 10,
   },
 });
