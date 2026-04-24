@@ -81,7 +81,7 @@ const Home = () => {
             <TouchableOpacity 
               style={styles.sosButton} 
               activeOpacity={0.8}
-              onPress={() => router.push('/sos')}
+              onPress={() => router.push('/sos' as any)}
             >
               <MaterialCommunityIcons name="shield-alert" size={45} color="#FFFFFF" />
             </TouchableOpacity>
@@ -112,15 +112,19 @@ const Home = () => {
         <NavItem active icon={<MaterialIcons name="home" size={28} color="#f25e75" />} label="Início" />
         <NavItem icon={<MaterialCommunityIcons name="alert-outline" size={28} color="#9C97AC" />} label="Ocorrencias" />
         <NavItem icon={<MaterialCommunityIcons name="account-plus-outline" size={28} color="#9C97AC" />} label="Contatos" />
-        <NavItem icon={<MaterialCommunityIcons name="bell-outline" size={28} color="#9C97AC" />} label="Alertas" />
+        <NavItem 
+          icon={<MaterialCommunityIcons name="bell-outline" size={28} color="#9C97AC" />} 
+          label="Alertas" 
+          onPress={() => router.push('/alertas' as any)}
+        />
         <NavItem icon={<MaterialCommunityIcons name="account-circle-outline" size={28} color="#9C97AC" />} label="Perfil" />
       </View>
     </View>
   );
 };
 
-const QuickAccessCard = ({ icon, label }: any) => (
-  <TouchableOpacity style={styles.quickAccessCard} activeOpacity={0.7}>
+const QuickAccessCard = ({ icon, label, onPress }: any) => (
+  <TouchableOpacity style={styles.quickAccessCard} activeOpacity={0.7} onPress={onPress}>
     <View style={styles.quickAccessIconBox}>
       {icon}
     </View>
@@ -131,7 +135,7 @@ const QuickAccessCard = ({ icon, label }: any) => (
 const OccurrenceCard = ({ title, description, time }: any) => (
   <View style={styles.occurrenceCard}>
     <View style={styles.occurrenceIconBox}>
-      <MaterialCommunityIcons name="alert-circle" size={30} color="#F35F74" />
+      <MaterialCommunityIcons name="alert-circle" size={30} color="#f25e75" />
     </View>
     <View style={styles.occurrenceInfo}>
       <Text style={styles.occurrenceTitle}>{title}</Text>
@@ -144,8 +148,8 @@ const OccurrenceCard = ({ title, description, time }: any) => (
   </View>
 );
 
-const NavItem = ({ active, icon, label }: any) => (
-  <TouchableOpacity style={styles.navItem} activeOpacity={0.7}>
+const NavItem = ({ active, icon, label, onPress }: any) => (
+  <TouchableOpacity style={styles.navItem} activeOpacity={0.7} onPress={onPress}>
     <View style={active ? styles.navIconActive : undefined}>
       {icon}
     </View>
