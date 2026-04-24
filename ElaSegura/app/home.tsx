@@ -19,7 +19,11 @@ const Areas_image = require('../assets/images/areas.png');
 
 
 
+import { useRouter } from 'expo-router';
+
 const Home = () => {
+  const router = useRouter();
+  
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
@@ -49,35 +53,37 @@ const Home = () => {
           <View style={styles.quickAccessGrid}>
             {/* 1. Ocorrências */}
             <QuickAccessCard
-              icon={<Image source={Ocorrencia_image} style={[styles.quickAccessIconImage, { tintColor: '#F35F74' }]} resizeMode="contain" />}
+              icon={<MaterialCommunityIcons name="file-alert-outline" size={28} color="#f25e75" />}
               label="Ocorrências"
             />
 
             {/* 2. Contatos SOS */}
             <QuickAccessCard
-              icon={<Image source={Contatos_image} style={[styles.quickAccessIconImage, { tintColor: '#F35F74' }]} resizeMode="contain" />}
+              icon={<Image source={Contatos_image} style={[styles.quickAccessIconImage, { tintColor: '#f25e75' }]} resizeMode="contain" />}
               label="Contatos SOS"
             />
 
             {/* 3. Alertas Recentes */}
             <QuickAccessCard
-              icon={<Image source={Alerta_image} style={[styles.quickAccessIconImage, { tintColor: '#F35F74' }]} resizeMode="contain" />}
+              icon={<Image source={Alerta_image} style={[styles.quickAccessIconImage, { tintColor: '#f25e75' }]} resizeMode="contain" />}
               label="Alertas Recentes"
             />
 
             {/* 4. Áreas de Risco */}
             <QuickAccessCard
-              icon={<Image source={Areas_image} style={[styles.quickAccessIconImage, { tintColor: '#F35F74' }]} resizeMode="contain" />}
+              icon={<Image source={Areas_image} style={[styles.quickAccessIconImage, { tintColor: '#f25e75' }]} resizeMode="contain" />}
               label="Áreas de risco"
             />
           </View>
 
           {/* Botão SOS centralizado */}
           <View style={styles.sosWrapper}>
-            <View style={styles.sosRipple} />
-            <TouchableOpacity style={styles.sosButton} activeOpacity={0.8}>
-              <MaterialCommunityIcons name="shield-check-outline" size={35} color="#FFFFFF" />
-              <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 14 }}>SOS</Text>
+            <TouchableOpacity 
+              style={styles.sosButton} 
+              activeOpacity={0.8}
+              onPress={() => router.push('/sos')}
+            >
+              <MaterialCommunityIcons name="shield-alert" size={45} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
 
@@ -103,7 +109,7 @@ const Home = () => {
 
       {/* Barra de Navegação Inferior */}
       <View style={styles.bottomNav}>
-        <NavItem active icon={<MaterialIcons name="home" size={28} color="#F35F74" />} label="Início" />
+        <NavItem active icon={<MaterialIcons name="home" size={28} color="#f25e75" />} label="Início" />
         <NavItem icon={<MaterialCommunityIcons name="alert-outline" size={28} color="#9C97AC" />} label="Ocorrencias" />
         <NavItem icon={<MaterialCommunityIcons name="account-plus-outline" size={28} color="#9C97AC" />} label="Contatos" />
         <NavItem icon={<MaterialCommunityIcons name="bell-outline" size={28} color="#9C97AC" />} label="Alertas" />
