@@ -1,11 +1,27 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView, StatusBar, Platform } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { styles } from '../styles/sos.styles';
 
 const SOSScreen = () => {
   const router = useRouter();
+
+  const triggerSOSAlert = async () => {
+    if (Platform.OS === 'web') {
+      alert("🚨 ALERTA SOS ENVIADO!\nSua localização foi enviada para seus contatos de emergência e autoridades. (Simulação na Web)");
+      return;
+    }
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "🚨 ALERTA SOS ENVIADO!",
+        body: "Sua localização foi enviada para seus contatos de emergência e autoridades.",
+        sound: true,
+      },
+      trigger: null,
+    });
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FDF7F9' }}>
@@ -38,10 +54,7 @@ const SOSScreen = () => {
           <TouchableOpacity 
             style={styles.sendButton}
             activeOpacity={0.8}
-            onPress={() => {
-              // Action to send alert
-              console.log('Alerta SOS enviado');
-            }}
+            onPress={triggerSOSAlert}
           >
             <MaterialCommunityIcons name="shield-alert" size={24} color="#FFFFFF" />
             <Text style={styles.sendButtonText}>Enviar Alerta Agora</Text>

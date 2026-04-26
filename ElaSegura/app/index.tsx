@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { SuccessPopup } from '../components/SuccessPopup';
 import {
   View,
   Text,
@@ -25,14 +26,24 @@ export default function Index() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  const [isPopupVisible, setIsPopupVisible] = useState(false);
+
   const handleRegister = () => {
-    // Navigate to home after registration
-    router.replace('/home');
+    setIsPopupVisible(true);
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F7D2F1" />
+      
+      <SuccessPopup 
+        visible={isPopupVisible} 
+        onContinue={() => {
+          setIsPopupVisible(false);
+          router.replace('/login');
+        }} 
+      />
+
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}

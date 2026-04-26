@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import * as Notifications from 'expo-notifications';
 import {
   View,
   Text,
@@ -7,6 +8,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
+  Platform,
 } from 'react-native';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { styles } from '../styles/home.styles';
@@ -20,9 +22,30 @@ const Contatos_image = require('../assets/images/contatos.png');
 const Alerta_image = require('../assets/images/alerta.png');
 const Areas_image = require('../assets/images/areas.png');
 
+if (Platform.OS !== 'web') {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
+}
+
 const Home = () => {
   const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    (async () => {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== 'granted') {
+        console.log('Permissão para notificações negada');
+      }
+    })();
+  }, []);
 
   const mockOcorrencias = [
     { id: 1, title: 'Roubo', desc: 'pegaram meu celular na esquina', time: '10 Abril, 10:59', type: 'error' },
@@ -32,6 +55,21 @@ const Home = () => {
     { id: 5, title: 'Assédio Verbal', desc: 'Comentários ofensivos no ônibus', time: '20 Abril, 14:20', type: 'error' },
   ];
   
+  const triggerDangerZoneAlert = async () => {
+    if (Platform.OS === 'web') {
+      alert("⚠️ Atenção: Área de Risco\nVocê está se aproximando de uma região com alto índice de ocorrências. (Simulação na Web)");
+      return;
+    }
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "⚠️ Atenção: Área de Risco",
+        body: "Você está se aproximando de uma região com alto índice de ocorrências. Mantenha a atenção ao seu redor.",
+        sound: true,
+      },
+      trigger: null,
+    });
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
@@ -83,6 +121,7 @@ const Home = () => {
             <QuickAccessCard
               icon={<Image source={Areas_image} style={[styles.quickAccessIconImage, { tintColor: '#f25e75' }]} resizeMode="contain" />}
               label="Áreas de risco"
+              onPress={triggerDangerZoneAlert}
             />
           </View>
 
