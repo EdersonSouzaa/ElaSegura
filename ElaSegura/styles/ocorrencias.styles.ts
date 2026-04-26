@@ -3,7 +3,7 @@ import { StyleSheet, Platform } from 'react-native';
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7D2F1', 
+    backgroundColor: '#F7D2F1',
   },
   header: {
     flexDirection: 'row',
@@ -11,6 +11,9 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'android' ? 50 : 40,
     paddingBottom: 20,
+  },
+  backButton: {
+    marginRight: 15,
   },
   headerTitle: {
     fontSize: 22,
@@ -22,9 +25,32 @@ export const styles = StyleSheet.create({
     color: '#6A6A75',
     marginTop: 5,
   },
+  actionContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 18,
+  },
+  registerButton: {
+    height: 50,
+    borderRadius: 16,
+    backgroundColor: '#F35F74',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    elevation: 5,
+    shadowColor: '#F35F74',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+  },
+  registerButtonText: {
+    color: '#FFF',
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
   listContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 100, // Espaço para não colar no fundo
+    paddingBottom: 100,
   },
   occurrenceCard: {
     backgroundColor: '#FFF',
@@ -48,6 +74,9 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 15,
   },
+  occurrenceInfo: {
+    flex: 1,
+  },
   occurrenceTitle: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -62,5 +91,108 @@ export const styles = StyleSheet.create({
     fontSize: 11,
     color: '#9C97AC',
     marginTop: 6,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 20,
+    paddingTop: 22,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 24,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1A1A1A',
+  },
+  modalSubtitle: {
+    fontSize: 13,
+    color: '#6A6A75',
+    marginTop: 4,
+  },
+  closeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFF0F2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  inputLabel: {
+    color: '#1A1A1A',
+    fontSize: 13,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  typeSelector: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 16,
+  },
+  typeOption: {
+    flex: 1,
+    height: 46,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#F35F74',
+    backgroundColor: '#FFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  typeOptionActive: {
+    backgroundColor: '#F35F74',
+  },
+  typeOptionText: {
+    color: '#F35F74',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  typeOptionTextActive: {
+    color: '#FFF',
+  },
+  input: {
+    minHeight: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#F0DCE3',
+    backgroundColor: '#FFF7FA',
+    paddingHorizontal: 14,
+    color: '#1A1A1A',
+    fontSize: 14,
+    marginBottom: 16,
+  },
+  textArea: {
+    minHeight: 104,
+    paddingTop: 14,
+  },
+  saveButton: {
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: '#F35F74',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  saveButtonDisabled: {
+    backgroundColor: '#D8AAB3',
+  },
+  saveButtonText: {
+    color: '#FFF',
+    fontSize: 15,
+    fontWeight: 'bold',
   },
 });
