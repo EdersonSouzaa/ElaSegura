@@ -128,11 +128,11 @@ const Home = () => {
 
             {/* 4. Áreas de Risco */}
             <QuickAccessCard
-              styles={styles}
-              icon={<Image source={Areas_image} style={[styles.quickAccessIconImage, { tintColor: colors.primary }]} resizeMode="contain" />}
-              label="Áreas de risco"
-              onPress={triggerDangerZoneAlert}
-            />
+            styles={styles}
+        icon={<Image source={Areas_image} style={[styles.quickAccessIconImage, { tintColor: colors.primary }]} resizeMode="contain" />}
+        label="Áreas de risco"
+        onPress={() => router.push('/mapa' as any)}
+        />
           </View>
 
           {/* Botão SOS centralizado */}
