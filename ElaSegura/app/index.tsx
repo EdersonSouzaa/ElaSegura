@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -14,16 +14,22 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTheme } from '../context/ThemeContext';
+import { Colors } from '../constants/theme';
 
 const MULHER_IMAGE = require('../assets/images/mulher.png');
 
 export default function Index() {
   const router = useRouter();
+  const { isDarkMode, theme } = useTheme();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  const colors = Colors[theme];
+  const styles = useMemo(() => getStyles(isDarkMode, colors), [isDarkMode, colors]);
 
   const handleRegister = () => {
     // Navigate to home after registration
@@ -32,25 +38,25 @@ export default function Index() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F7D2F1" />
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={colors.background} />
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
-            <Image source={MULHER_IMAGE} style={styles.brandImage} resizeMode="contain" />
+            <Image source={MULHER_IMAGE} style={[styles.brandImage, isDarkMode && { tintColor: colors.primary }]} resizeMode="contain" />
             <Text style={styles.brandTitle}>ElaSegura</Text>
             <Text style={styles.brandSubtitle}>Sua segurança é importante 💜</Text>
           </View>
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <MaterialCommunityIcons name="account-outline" size={24} color="#9C97AC" style={styles.inputIcon} />
+              <MaterialCommunityIcons name="account-outline" size={24} color={colors.secondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Nome Completo"
-                placeholderTextColor="#9C97AC"
+                placeholderTextColor={colors.secondary}
                 value={name}
                 onChangeText={setName}
                 autoCapitalize="words"
@@ -58,11 +64,11 @@ export default function Index() {
             </View>
 
             <View style={styles.inputContainer}>
-              <MaterialCommunityIcons name="email-outline" size={24} color="#9C97AC" style={styles.inputIcon} />
+              <MaterialCommunityIcons name="email-outline" size={24} color={colors.secondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="E-mail"
-                placeholderTextColor="#9C97AC"
+                placeholderTextColor={colors.secondary}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -71,11 +77,11 @@ export default function Index() {
             </View>
 
             <View style={styles.inputContainer}>
-              <MaterialCommunityIcons name="lock-outline" size={24} color="#9C97AC" style={styles.inputIcon} />
+              <MaterialCommunityIcons name="lock-outline" size={24} color={colors.secondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Senha"
-                placeholderTextColor="#9C97AC"
+                placeholderTextColor={colors.secondary}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -84,17 +90,17 @@ export default function Index() {
                 <MaterialCommunityIcons 
                   name={showPassword ? "eye-off-outline" : "eye-outline"} 
                   size={24} 
-                  color="#9C97AC" 
+                  color={colors.secondary} 
                 />
               </TouchableOpacity>
             </View>
 
             <View style={styles.inputContainer}>
-              <MaterialCommunityIcons name="lock-check-outline" size={24} color="#9C97AC" style={styles.inputIcon} />
+              <MaterialCommunityIcons name="lock-check-outline" size={24} color={colors.secondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Confirmar Senha"
-                placeholderTextColor="#9C97AC"
+                placeholderTextColor={colors.secondary}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry={!showPassword}
@@ -118,10 +124,10 @@ export default function Index() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (isDarkMode: boolean, colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7D2F1',
+    backgroundColor: colors.background,
   },
   keyboardView: {
     flex: 1,
@@ -145,32 +151,16 @@ const styles = StyleSheet.create({
   brandTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#FF1493',
+    color: isDarkMode ? colors.primary : '#FF1493',
     marginBottom: 5,
   },
   brandSubtitle: {
     fontSize: 15,
-    color: '#1A1A1A',
+    color: colors.text,
     fontWeight: '500',
   },
-  backButton: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
   form: {
-    backgroundColor: '#FFF',
+    backgroundColor: colors.cardBackground,
     padding: 24,
     borderRadius: 30,
     elevation: 5,
@@ -182,13 +172,13 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8F8F8',
+    backgroundColor: isDarkMode ? '#252525' : '#F8F8F8',
     borderRadius: 16,
     marginBottom: 16,
     paddingHorizontal: 16,
     height: 56,
     borderWidth: 1,
-    borderColor: '#EFEFEF',
+    borderColor: colors.border,
   },
   inputIcon: {
     marginRight: 12,
@@ -196,20 +186,16 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    color: '#1A1A1A',
+    color: colors.text,
   },
   registerButton: {
-    backgroundColor: '#F35F74',
+    backgroundColor: colors.primary,
     borderRadius: 16,
     height: 56,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 10,
     elevation: 3,
-    shadowColor: '#F35F74',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
   },
   registerButtonText: {
     color: '#FFF',
@@ -223,11 +209,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   footerText: {
-    color: '#6A6A75',
+    color: colors.secondary,
     fontSize: 15,
   },
   footerLink: {
-    color: '#F35F74',
+    color: colors.primary,
     fontSize: 15,
     fontWeight: 'bold',
   },

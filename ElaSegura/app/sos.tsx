@@ -1,15 +1,20 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { styles } from '../styles/sos.styles';
+import { getStyles } from '../styles/sos.styles';
+import { useTheme } from '../context/ThemeContext';
+import { Colors } from '../constants/theme';
 
 const SOSScreen = () => {
   const router = useRouter();
+  const { isDarkMode, theme } = useTheme();
+  const colors = Colors[theme];
+  const styles = useMemo(() => getStyles(isDarkMode, colors), [isDarkMode, colors]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FDF7F9' }}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={colors.background} />
       <View style={styles.container}>
         
         {/* Top Icon Section with Glow */}
@@ -29,7 +34,7 @@ const SOSScreen = () => {
 
         {/* Location Section */}
         <View style={styles.locationContainer}>
-          <MaterialIcons name="location-on" size={18} color="#9C97AC" />
+          <MaterialIcons name="location-on" size={18} color={colors.secondary} />
           <Text style={styles.locationText}>Localização detectada</Text>
         </View>
 
