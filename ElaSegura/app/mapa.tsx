@@ -52,11 +52,11 @@ const TIPO_ICON: Record<string, { icon: React.ComponentProps<typeof Ionicons>['n
 export default function MapaScreen() {
   const [filter,      setFilter]      = useState('Todos');
   const [selectedB,   setSelectedB]   = useState<string | null>(null);
-  const [activeTab,   setActiveTab]   = useState<'bairros' | 'ocorrencias'>('bairros');
+  const [activeTab,   setActiveTab]   = useState<'bairros' | 'ocorrencias'>('ocorrencias');
 
   const totalOcorrencias = BAIRROS.reduce((a, b) => a + b.incidents, 0);
 
-  const ocorrenciasFiltradas = OCORRENCIAS.filter(o =>
+  const ocorrenciasFiltradas = [...OCORRENCIAS].reverse().filter(o =>
     filter === 'Todos' || o.tipo === filter
   );
 
@@ -68,7 +68,10 @@ export default function MapaScreen() {
     <SafeAreaView style={s.safe}>
 
       <View style={s.header}>
-        <View>
+        <TouchableOpacity onPress={() => router.push('/home')} style={s.backBtn}>
+          <Ionicons name="arrow-back" size={24} color="#1A1A1A" />
+        </TouchableOpacity>
+        <View style={{ flex: 1, marginLeft: 10 }}>
           <Text style={s.headerTitle}>Mapa de Segurança</Text>
           <Text style={s.headerSub}>Fortaleza · {totalOcorrencias} ocorrências hoje</Text>
         </View>
@@ -113,18 +116,17 @@ export default function MapaScreen() {
         ))}
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filtersBar} contentContainerStyle={s.filtersContent}>
-        {FILTERS.map(f => (
-          <TouchableOpacity key={f} style={[s.chip, filter === f && s.chipActive]} onPress={() => setFilter(f)}>
-            <Text style={[s.chipText, filter === f && s.chipTextActive]}>{f}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <View style={s.filtersContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filtersContent}>
+          {FILTERS.map(f => (
+            <TouchableOpacity key={f} style={[s.chip, filter === f && s.chipActive]} onPress={() => setFilter(f)}>
+              <Text style={[s.chipText, filter === f && s.chipTextActive]}>{f}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
 
       <View style={s.tabRow}>
-        <TouchableOpacity style={[s.tab, activeTab === 'bairros' && s.tabActive]} onPress={() => setActiveTab('bairros')}>
-          <Text style={[s.tabText, activeTab === 'bairros' && s.tabTextActive]}>Bairros</Text>
-        </TouchableOpacity>
         <TouchableOpacity style={[s.tab, activeTab === 'ocorrencias' && s.tabActive]} onPress={() => setActiveTab('ocorrencias')}>
           <Text style={[s.tabText, activeTab === 'ocorrencias' && s.tabTextActive]}>
             Ocorrências recentes
@@ -132,6 +134,9 @@ export default function MapaScreen() {
           <View style={s.tabBadge}>
             <Text style={s.tabBadgeText}>{ocorrenciasFiltradas.length}</Text>
           </View>
+        </TouchableOpacity>
+        <TouchableOpacity style={[s.tab, activeTab === 'bairros' && s.tabActive]} onPress={() => setActiveTab('bairros')}>
+          <Text style={[s.tabText, activeTab === 'bairros' && s.tabTextActive]}>Bairros</Text>
         </TouchableOpacity>
       </View>
 
@@ -239,7 +244,8 @@ export default function MapaScreen() {
 const s = StyleSheet.create({
   safe:             { flex: 1, backgroundColor: '#F7D2F1' },
 
-  header:           { backgroundColor: '#fff', paddingHorizontal: 20, paddingTop: Platform.OS === 'android' ? 15 : 10, paddingBottom: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 5 },
+  header:           { backgroundColor: '#fff', paddingHorizontal: 16, paddingTop: Platform.OS === 'android' ? 15 : 10, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 5 },
+  backBtn:          { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginLeft: -4 },
   headerTitle:      { fontSize: 20, fontWeight: '700', color: '#1A1A1A' },
   headerSub:        { fontSize: 13, color: '#6A6A75', marginTop: 2 },
   headerBadge:      { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FFF0F2', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 20 },
@@ -261,25 +267,25 @@ const s = StyleSheet.create({
   statNum:          { fontSize: 22, fontWeight: '700' },
   statLabel:        { fontSize: 11, color: '#999', marginTop: 2, fontWeight: '500' },
 
-  filtersBar:       { flexGrow: 0, backgroundColor: '#fff', borderBottomWidth: 0.5, borderBottomColor: '#f0e0e8' },
-  filtersContent:   { padding: 10, gap: 8, flexDirection: 'row' },
-  chip:             { paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20, borderWidth: 0.5, borderColor: '#e0e0e0', backgroundColor: '#fff' },
+  filtersContainer: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f0e0e8', height: 75 },
+  filtersContent:   { paddingHorizontal: 12, gap: 10, flexDirection: 'row', alignItems: 'center', height: '100%' },
+  chip:             { height: 44, paddingHorizontal: 20, borderRadius: 22, borderWidth: 1, borderColor: '#f0f0f0', backgroundColor: '#f9f9f9', justifyContent: 'center', alignItems: 'center' },
   chipActive:       { backgroundColor: Colors.pinkM, borderColor: Colors.pinkBtn },
-  chipText:         { fontSize: 12, color: '#999' },
+  chipText:         { fontSize: 14, color: '#666', fontWeight: '500' },
   chipTextActive:   { color: Colors.pinkD, fontWeight: '700' },
 
   tabRow:           { flexDirection: 'row', backgroundColor: '#fff', paddingHorizontal: 16, paddingTop: 8, gap: 4, borderBottomWidth: 0.5, borderBottomColor: '#f0e0e8' },
   tab:              { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingBottom: 10, gap: 6, borderBottomWidth: 2, borderBottomColor: 'transparent' },
   tabActive:        { borderBottomColor: Colors.pinkBtn },
-  tabText:          { fontSize: 13, color: '#999', fontWeight: '500' },
+  tabText:          { fontSize: 13, color: '#666', fontWeight: '500' },
   tabTextActive:    { color: Colors.pinkBtn, fontWeight: '700' },
   tabBadge:         { backgroundColor: Colors.pinkM, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 1 },
   tabBadgeText:     { fontSize: 10, color: Colors.pinkD, fontWeight: '700' },
 
   scroll:           { padding: 14, paddingBottom: 32, gap: 12 },
 
-  grid:             { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  bCard:            { width: '47.5%', backgroundColor: '#fff', borderRadius: 16, padding: 12, gap: 8, borderWidth: 1, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4 },
+  grid:             { gap: 10 },
+  bCard:            { width: '100%', backgroundColor: '#fff', borderRadius: 16, padding: 12, gap: 8, borderWidth: 1, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4 },
   bCardTop:         { flexDirection: 'row', alignItems: 'center', gap: 6 },
   bRiskDot:         { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
   bName:            { fontSize: 12, fontWeight: '700', color: '#1A1A1A', flex: 1 },
