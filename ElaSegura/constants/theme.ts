@@ -11,6 +11,7 @@ export const Colors = {
     tabIconSelected: '#F35F74',
     statusBar: 'dark-content',
     headerBg: '#FFFFFF',
+    icon: '#9C97AC',
   },
   dark: {
     text: '#FFFFFF',
@@ -24,6 +25,7 @@ export const Colors = {
     tabIconSelected: '#F35F74',
     statusBar: 'light-content',
     headerBg: '#1E1E1E',
+    icon: '#A0A0A0',
   },
 };
 

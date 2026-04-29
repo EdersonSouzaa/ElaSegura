@@ -190,7 +190,6 @@ export default function Settings() {
             icon="information-outline" 
             title="Sobre o App" 
             onPress={() => router.push('/about' as any)} 
-
             isLast
           />
         </Section>
