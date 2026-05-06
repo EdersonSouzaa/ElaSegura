@@ -1,37 +1,59 @@
-# ElaSegura
+# ElaSegura - Guia de Execução
 
-## Description
+Este projeto consiste em um aplicativo mobile (Frontend) e um servidor de API (Backend) com banco de dados PostgreSQL.
 
-ElaSegura is a mobile application designed to improve women's safety in urban areas.
-The app allows users to share their location, send emergency alerts, and report unsafe situations.
-It helps prevent violence and provides quick support in dangerous moments.
+## 🚀 Como Executar o Projeto
 
-## Features
+### 1. Requisitos Próximos
+- Node.js instalado
+- PostgreSQL instalado e rodando no Windows
+- Banco de dados criado no PostgreSQL chamado: `elasegura`
 
-* User registration with basic information and emergency contacts
-* Emergency button (SOS) for quick alert and real-time location sharing
-* Real-time location tracking for trusted contacts
-* Incident reporting with description and automatic location
-* Interactive map showing safe and dangerous areas
-* View nearby incidents based on user location
-* Emergency contacts management (add, edit, remove)
-* Alerts and notifications when entering risky areas
-* Quick access to emergency services
-* Activity history of alerts and reported incidents
+---
 
+### 2. Configuração do Backend (API)
+Abra um terminal na pasta `server`:
 
-## Technologies
+1. **Instalar dependências:**
+   ```bash
+   npm install
+   ```
 
-* React Native (mobile development)
-* NodeJS
-* PostegreSQL (database and authentication)
+2. **Verificar o banco:**
+   Certifique-se de que o PostgreSQL está rodando e que você criou o banco `elasegura`.
 
+3. **Iniciar o servidor:**
+   ```bash
+   npm run dev
+   ```
+   *O servidor estará rodando em http://localhost:3000 e as tabelas serão criadas automaticamente.*
 
-## How to Run
+---
 
-1. Clone the repository
-2. Install dependencies using `npm install`
-3. Make sure you have a React Native environment configured (Node.js, Expo or React Native CLI)
-4. Start the project with `npx expo start` or `npm start`
-5. Run the app on an emulator or a physical mobile device (Android/iOS)
+### 3. Configuração do Frontend (App)
+Abra um terminal na pasta `ElaSegura`:
 
+1. **Instalar dependências:**
+   ```bash
+   npm install
+   ```
+
+2. **Configurar o IP (Importante para Celular):**
+   No arquivo `services/api.ts`, certifique-se de que o IP está correto para o seu computador atual.
+
+3. **Iniciar o App:**
+   ```bash
+   npx expo start
+   ```
+   *Escaneie o QR Code com o app Expo Go no seu celular.*
+
+---
+
+## 🛠️ Tecnologias
+- **Frontend:** React Native (Expo)
+- **Backend:** Node.js + Express
+- **Banco de Dados:** PostgreSQL (Direto via `pg`)
+- **Autenticação:** JWT (JSON Web Token)
+
+## 📌 Observação
+Para que o celular consiga falar com o computador, ambos devem estar na **mesma rede Wi-Fi**.
