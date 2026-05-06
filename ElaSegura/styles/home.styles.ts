@@ -17,8 +17,27 @@ export const getStyles = (isDarkMode: boolean, colors: any) => StyleSheet.create
     shadowRadius: 5,
   },
   headerContent: {
+    flexDirection: 'column',
+    flex: 1,
+  },
+  headerTop: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    width: '100%',
+  },
+  headerAvatar: {
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
+    backgroundColor: '#1A1A1A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   headerIconBox: {
     width: 45,

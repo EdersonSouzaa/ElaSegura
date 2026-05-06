@@ -17,6 +17,7 @@ import { useState, useMemo } from 'react';
 import { Modal } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { Colors } from '../constants/theme';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const MAPA_IMAGE = require('../assets/images/mapa.png');
 const Ocorrencia_image = require('../assets/images/ocorrencia.png');
@@ -40,8 +41,27 @@ const Home = () => {
   const { isDarkMode, theme } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
   
-  const colors = Colors[theme];
+   const colors = Colors[theme];
   const styles = useMemo(() => getStyles(isDarkMode, colors), [isDarkMode, colors]);
+
+  const [userName, setUserName] = useState('');
+
+  useEffect(() => {
+    const loadUserName = async () => {
+      try {
+        const savedUser = await AsyncStorage.getItem('user');
+        if (savedUser) {
+          const user = JSON.parse(savedUser);
+          // Pega apenas o primeiro nome para ficar mais amigável
+          const firstName = user.name.split(' ')[0];
+          setUserName(firstName);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar nome:', error);
+      }
+    };
+    loadUserName();
+  }, []);
 
   useEffect(() => {
     if (Platform.OS === 'web') return;
@@ -86,8 +106,20 @@ const Home = () => {
       >
         {/* Cabeçalho esticado até as bordas */}
         <View style={styles.header}>
-          <Text style={styles.headerGreeting}>Olá 👋</Text>
-          <Text style={styles.headerStatus}>Você está segura aqui 💜</Text>
+          <View style={styles.headerTop}>
+            <View style={styles.headerContent}>
+              <Text style={styles.headerGreeting}>Olá, {userName || 'Usuária'} 👋</Text>
+              <Text style={styles.headerStatus}>Você está segura aqui 💜</Text>
+            </View>
+            
+            <TouchableOpacity 
+              style={styles.headerAvatar} 
+              onPress={() => router.push('/perfil')}
+              activeOpacity={0.8}
+            >
+              <MaterialIcons name="person" size={28} color="#FFF" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.content}>

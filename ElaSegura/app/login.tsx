@@ -15,6 +15,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { api } from '../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 import { SuccessPopup } from '../components/SuccessPopup';
 import { useTheme } from '../context/ThemeContext';
@@ -47,6 +48,11 @@ export default function Login() {
 
     try {
       const response = await api.post('/auth/login', { email, password });
+      
+      // Salva os dados do usuário para serem usados no perfil
+      await AsyncStorage.setItem('user', JSON.stringify(response.user));
+      await AsyncStorage.setItem('userPassword', password); // Salvando a senha localmente para exibir no perfil conforme pedido
+      
       console.log('Login realizado:', response);
       router.replace('/home');
     } catch (error: any) {
