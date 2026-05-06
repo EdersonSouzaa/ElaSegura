@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { SuccessPopup } from '../components/SuccessPopup';
+import { api } from '../services/api';
+import { Alert } from 'react-native';
 import {
   View,
   Text,
@@ -28,14 +30,30 @@ export default function Index() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const [isPopupVisible, setIsPopupVisible] = useState(false);
 
   const colors = Colors[theme];
   const styles = useMemo(() => getStyles(isDarkMode, colors), [isDarkMode, colors]);
 
-  const handleRegister = () => {
-    setIsPopupVisible(true);
+  const handleRegister = async () => {
+    setErrorMessage('');
+    if (!name || !email || !password || !confirmPassword) {
+      setErrorMessage('Preencha todos os campos');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setErrorMessage('As senhas não coincidem');
+      return;
+    }
+
+    try {
+      await api.post('/auth/register', { name, email, password });
+      setIsPopupVisible(true);
+    } catch (error: any) {
+      Alert.alert('Erro no Cadastro', error.message);
+    }
   };
 
   return (
@@ -117,6 +135,8 @@ export default function Index() {
                 secureTextEntry={!showPassword}
               />
             </View>
+
+            {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
             <TouchableOpacity style={styles.registerButton} onPress={handleRegister} activeOpacity={0.8}>
               <Text style={styles.registerButtonText}>Cadastrar</Text>
@@ -227,5 +247,12 @@ const getStyles = (isDarkMode: boolean, colors: any) => StyleSheet.create({
     color: colors.primary,
     fontSize: 15,
     fontWeight: 'bold',
+  },
+  errorText: {
+    color: '#FF0000',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 10,
+    fontWeight: '600',
   },
 });

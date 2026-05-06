@@ -14,6 +14,10 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { api } from '../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert } from 'react-native';
+import { SuccessPopup } from '../components/SuccessPopup';
 import { useTheme } from '../context/ThemeContext';
 import { Colors } from '../constants/theme';
 
@@ -29,30 +33,65 @@ export default function Login() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [isSuccessVisible, setIsSuccessVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const colors = Colors[theme];
   const styles = useMemo(() => getStyles(isDarkMode, colors), [isDarkMode, colors]);
 
-  const handleLogin = () => {
-    // Navigate to home
-    router.replace('/home');
+  const handleLogin = async () => {
+    setErrorMessage('');
+    if (!email || !password) {
+      setErrorMessage('Preencha todos os campos');
+      return;
+    }
+
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      
+      // Salva os dados do usuário para serem usados no perfil
+      await AsyncStorage.setItem('user', JSON.stringify(response.user));
+      await AsyncStorage.setItem('userPassword', password); // Salvando a senha localmente para exibir no perfil conforme pedido
+      
+      console.log('Login realizado:', response);
+      router.replace('/home');
+    } catch (error: any) {
+      setErrorMessage('email ou senha incorretos');
+    }
   };
 
-  const handleRecoverPassword = () => {
-    // Logic for recovery (frontend only)
-    if (newPassword === confirmNewPassword && newPassword !== '') {
-      console.log('Senha alterada com sucesso');
+  const handleRecoverPassword = async () => {
+    if (!email) {
+      Alert.alert('Erro', 'Por favor, digite seu e-mail no formulário de login primeiro.');
+      return;
+    }
+    if (newPassword !== confirmNewPassword || newPassword === '') {
+      Alert.alert('Erro', 'As senhas não coincidem ou estão vazias.');
+      return;
+    }
+
+    try {
+      await api.post('/auth/reset-password', { email, newPassword });
+      setIsSuccessVisible(true);
       setIsModalVisible(false);
       setNewPassword('');
       setConfirmNewPassword('');
-    } else {
-      console.log('Senhas não coincidem');
+    } catch (error: any) {
+      Alert.alert('Erro', error.message);
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={colors.background} />
+      
+      <SuccessPopup 
+        visible={isSuccessVisible} 
+        title="Senha Alterada!"
+        message="Sua nova senha já está valendo. Agora é só entrar!"
+        onContinue={() => setIsSuccessVisible(false)} 
+      />
+
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -96,6 +135,8 @@ export default function Login() {
                 />
               </TouchableOpacity>
             </View>
+
+            {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
             <TouchableOpacity 
               style={styles.forgotPassword} 
@@ -339,5 +380,12 @@ const getStyles = (isDarkMode: boolean, colors: any) => StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  errorText: {
+    color: '#FF0000',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 10,
+    fontWeight: '600',
   },
 });

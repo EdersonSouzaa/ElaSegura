@@ -1,7 +1,3 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- */
-
 export const Colors = {
   light: {
     text: '#1A1A1A',
@@ -15,6 +11,7 @@ export const Colors = {
     tabIconSelected: '#F35F74',
     statusBar: 'dark-content',
     headerBg: '#FFFFFF',
+    icon: '#9C97AC',
   },
   dark: {
     text: '#FFFFFF',
@@ -28,6 +25,7 @@ export const Colors = {
     tabIconSelected: '#F35F74',
     statusBar: 'light-content',
     headerBg: '#1E1E1E',
+    icon: '#A0A0A0',
   },
 };
 
