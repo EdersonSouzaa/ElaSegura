@@ -1,26 +1,24 @@
-import React, { useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
   ScrollView,
   Image,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   Platform,
+  Modal,
 } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { getStyles } from '../styles/home.styles';
 import { useRouter } from 'expo-router';
-import { useState, useMemo } from 'react';
-import { Modal } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
 import { Colors } from '../constants/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const MAPA_IMAGE = require('../assets/images/mapa.png');
-const Ocorrencia_image = require('../assets/images/ocorrencia.png');
 const Contatos_image = require('../assets/images/contatos.png');
 const Alerta_image = require('../assets/images/alerta.png');
 const Areas_image = require('../assets/images/areas.png');
@@ -45,23 +43,27 @@ const Home = () => {
   const styles = useMemo(() => getStyles(isDarkMode, colors), [isDarkMode, colors]);
 
   const [userName, setUserName] = useState('');
+  const [profilePicture, setProfilePicture] = useState<string | null>(null);
 
-  useEffect(() => {
-    const loadUserName = async () => {
-      try {
-        const savedUser = await AsyncStorage.getItem('user');
-        if (savedUser) {
-          const user = JSON.parse(savedUser);
-          // Pega apenas o primeiro nome para ficar mais amigável
-          const firstName = user.name.split(' ')[0];
-          setUserName(firstName);
+  useFocusEffect(
+    useCallback(() => {
+      const loadUserData = async () => {
+        try {
+          const savedUser = await AsyncStorage.getItem('user');
+          if (savedUser) {
+            const user = JSON.parse(savedUser);
+            // Pega apenas o primeiro nome para ficar mais amigável
+            const firstName = user.name.split(' ')[0];
+            setUserName(firstName);
+            setProfilePicture(user.profile_picture || null);
+          }
+        } catch (error) {
+          console.error('Erro ao carregar dados:', error);
         }
-      } catch (error) {
-        console.error('Erro ao carregar nome:', error);
-      }
-    };
-    loadUserName();
-  }, []);
+      };
+      loadUserData();
+    }, [])
+  );
 
   useEffect(() => {
     if (Platform.OS === 'web') return;
@@ -72,21 +74,6 @@ const Home = () => {
       }
     })();
   }, []);
-
-  const triggerDangerZoneAlert = async () => {
-    if (Platform.OS === 'web') {
-      alert("⚠️ Atenção: Área de Risco\nVocê está se aproximando de uma região com alto índice de ocorrências. (Simulação na Web)");
-      return;
-    }
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: "⚠️ Atenção: Área de Risco",
-        body: "Você está se aproximando de uma região com alto índice de ocorrências. Mantenha a atenção ao seu redor.",
-        sound: true,
-      },
-      trigger: null,
-    });
-  };
 
   const mockOcorrencias = [
     { id: 1, title: 'Roubo', desc: 'pegaram meu celular na esquina', time: '10 Abril, 10:59', type: 'error' },
@@ -117,7 +104,11 @@ const Home = () => {
               onPress={() => router.push('/perfil')}
               activeOpacity={0.8}
             >
-              <MaterialIcons name="person" size={28} color="#FFF" />
+              {profilePicture ? (
+                <Image source={{ uri: profilePicture }} style={{ width: 45, height: 45, borderRadius: 22.5 }} />
+              ) : (
+                <MaterialIcons name="person" size={28} color="#FFF" />
+              )}
             </TouchableOpacity>
           </View>
         </View>

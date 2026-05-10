@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,31 +6,38 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
+  Image,
+  Alert,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { getStyles } from '../styles/perfil.styles';
 import { router } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { Colors } from '../constants/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useState, useEffect } from 'react';
+import { api } from '../services/api';
 
 export default function Perfil() {
   const { isDarkMode, theme } = useTheme();
   const colors = Colors[theme];
   const styles = useMemo(() => getStyles(isDarkMode, colors), [isDarkMode, colors]);
 
-  const [userData, setUserData] = useState({ name: '', email: '' });
+  const [userData, setUserData] = useState({ name: '', email: '', profile_picture: null as string | null });
   const [password, setPassword] = useState('');
+  const [token, setToken] = useState('');
 
   useEffect(() => {
     const loadUserData = async () => {
       try {
         const savedUser = await AsyncStorage.getItem('user');
         const savedPassword = await AsyncStorage.getItem('userPassword');
+        const savedToken = await AsyncStorage.getItem('userToken');
+        if (savedToken) setToken(savedToken);
         
         if (savedUser) {
-          setUserData(JSON.parse(savedUser));
+          const userObj = JSON.parse(savedUser);
+          setUserData({ name: userObj.name, email: userObj.email, profile_picture: userObj.profile_picture || null });
         }
         if (savedPassword) {
           setPassword(savedPassword);
@@ -42,6 +49,36 @@ export default function Perfil() {
 
     loadUserData();
   }, []);
+
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.3,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets[0].base64) {
+      const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+      setUserData({ ...userData, profile_picture: base64Image });
+      
+      try {
+        await api.put('/user/profile-picture', { profile_picture: base64Image }, token);
+        
+        const savedUser = await AsyncStorage.getItem('user');
+        if (savedUser) {
+          const userObj = JSON.parse(savedUser);
+          userObj.profile_picture = base64Image;
+          await AsyncStorage.setItem('user', JSON.stringify(userObj));
+        }
+        Alert.alert('Sucesso', 'Foto de perfil atualizada!');
+      } catch (error) {
+        console.error('Erro ao salvar foto:', error);
+        Alert.alert('Erro', 'Não foi possível atualizar a foto.');
+      }
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -58,9 +95,13 @@ export default function Perfil() {
           <Text style={styles.headerTitle}>Meu Perfil</Text>
           
           <View style={styles.avatarContainer}>
-            <View style={styles.avatarBox}>
-              <MaterialIcons name="person" size={50} color="#FFF" />
-            </View>
+            <TouchableOpacity onPress={pickImage} style={styles.avatarBox} activeOpacity={0.8}>
+              {userData.profile_picture ? (
+                <Image source={{ uri: userData.profile_picture }} style={{ width: 80, height: 80, borderRadius: 40 }} />
+              ) : (
+                <MaterialIcons name="person" size={50} color="#FFF" />
+              )}
+            </TouchableOpacity>
             <Text style={styles.userName}>{userData.name || 'Usuária'}</Text>
             <Text style={styles.userEmail}>{userData.email || 'carregando...'}</Text>
           </View>
