@@ -39,10 +39,27 @@ export default function Index() {
 
   const handleRegister = async () => {
     setErrorMessage('');
+    
+    // 1. Verifica se tem campo vazio
     if (!name || !email || !password || !confirmPassword) {
       setErrorMessage('Preencha todos os campos');
       return;
     }
+
+    // 2. Validação REGEX do E-mail
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setErrorMessage('Digite um e-mail válido (ex: seuemail@dominio.com)');
+      return;
+    }
+
+    // 3. Validação de Tamanho da Senha
+    if (password.length < 6 || password.length > 20) {
+      setErrorMessage('A senha precisa ter entre 6 e 20 caracteres');
+      return;
+    }
+
+    // 4. Verifica se as senhas batem
     if (password !== confirmPassword) {
       setErrorMessage('As senhas não coincidem');
       return;

@@ -41,23 +41,30 @@ export default function Login() {
 
   const handleLogin = async () => {
     setErrorMessage('');
+    
     if (!email || !password) {
       setErrorMessage('Preencha todos os campos');
+      return;
+    }
+
+    // Validação REGEX do E-mail
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setErrorMessage('Digite um e-mail válido (ex: seuemail@dominio.com)');
       return;
     }
 
     try {
       const response = await api.post('/auth/login', { email, password });
       
-      // Salva os dados do usuário para serem usados no perfil
       await AsyncStorage.setItem('user', JSON.stringify(response.user));
       await AsyncStorage.setItem('userToken', response.token);
-      await AsyncStorage.setItem('userPassword', password); // Salvando a senha localmente para exibir no perfil conforme pedido
+      await AsyncStorage.setItem('userPassword', password); 
       
       console.log('Login realizado:', response);
       router.replace('/home');
     } catch (error: any) {
-      setErrorMessage('email ou senha incorretos');
+      setErrorMessage('E-mail ou senha incorretos');
     }
   };
 
@@ -66,8 +73,21 @@ export default function Login() {
       Alert.alert('Erro', 'Por favor, digite seu e-mail no formulário de login primeiro.');
       return;
     }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Erro', 'Formato de e-mail inválido.');
+      return;
+    }
+
     if (newPassword !== confirmNewPassword || newPassword === '') {
       Alert.alert('Erro', 'As senhas não coincidem ou estão vazias.');
+      return;
+    }
+
+    // Validação de Tamanho da Nova Senha
+    if (newPassword.length < 6 || newPassword.length > 20) {
+      Alert.alert('Erro', 'A nova senha precisa ter entre 6 e 20 caracteres.');
       return;
     }
 

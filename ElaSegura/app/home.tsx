@@ -124,7 +124,11 @@ const Home = () => {
 
         <View style={styles.content}>
           {/* Mapa com bordas bem arredondadas */}
-          <TouchableOpacity activeOpacity={0.9} style={styles.mapCard}>
+          <TouchableOpacity 
+            activeOpacity={0.9} 
+            style={styles.mapCard}
+            onPress={() => router.push('/mapa')} 
+          >
             <Image
               source={MAPA_IMAGE}
               style={styles.mapImage}
