@@ -11,7 +11,7 @@ router.get('/me', authenticateToken, async (req: any, res: Response) => {
 
   try {
     const result = await query(
-      'SELECT id, name, email, notifications_enabled, location_enabled FROM "user" WHERE id = $1',
+      'SELECT id, name, email, profile_picture, notifications_enabled, location_enabled FROM "user" WHERE id = $1',
       [userId]
     );
 
@@ -22,6 +22,28 @@ router.get('/me', authenticateToken, async (req: any, res: Response) => {
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error fetching user info:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update profile picture
+router.put('/profile-picture', authenticateToken, async (req: any, res: Response) => {
+  const userId = req.user.id;
+  const { profile_picture } = req.body;
+
+  try {
+    const result = await query(
+      'UPDATE "user" SET profile_picture = $1 WHERE id = $2 RETURNING profile_picture',
+      [profile_picture, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating profile picture:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

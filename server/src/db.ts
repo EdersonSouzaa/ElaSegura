@@ -27,6 +27,11 @@ export const initDb = async () => {
       );
     `);
 
+    // Add profile_picture column if it doesn't exist
+    await client.query(`
+      ALTER TABLE "user" ADD COLUMN IF NOT EXISTS profile_picture TEXT;
+    `);
+
     // Create Ocorrencia table
     await client.query(`
       CREATE TABLE IF NOT EXISTS "ocorrencia" (
