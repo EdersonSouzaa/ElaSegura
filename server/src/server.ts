@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { initDb } from './db.js';
 import authRoutes from './routes/auth.js';
+import alertasRoutes from './routes/alertas.js';
 import ocorrenciaRoutes from './routes/ocorrencias.js';
 import contatoRoutes from './routes/contatos.js';
 import sosRoutes from './routes/sos.js';
@@ -18,6 +19,7 @@ app.use(express.json({ limit: '10mb' }));
 
 // Routes
 app.use('/auth', authRoutes);
+app.use('/alertas', alertasRoutes);
 app.use('/ocorrencias', ocorrenciaRoutes);
 app.use('/contatos', contatoRoutes);
 app.use('/sos', sosRoutes);
