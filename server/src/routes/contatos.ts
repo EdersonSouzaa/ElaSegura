@@ -6,13 +6,13 @@ const router = Router();
 
 // Create Contato
 router.post('/', authenticateToken, async (req: any, res: Response) => {
-  const { name, phone } = req.body;
+  const { name, phone, emergencial } = req.body;
   const userId = req.user.id;
 
   try {
     const result = await query(
-      'INSERT INTO "contatos" (user_id, name, phone) VALUES ($1, $2, $3) RETURNING *',
-      [userId, name, phone]
+     'INSERT INTO "contatos" (user_id, name, phone, emergencial) VALUES ($1, $2, $3, $4) RETURNING *',
+[userId, name, phone, emergencial ?? false]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -36,13 +36,13 @@ router.get('/', authenticateToken, async (req: any, res: Response) => {
 // Update Contato
 router.put('/:id', authenticateToken, async (req: any, res: Response) => {
   const { id } = req.params;
-  const { name, phone } = req.body;
+  const { name, phone , emergencial } = req.body;
   const userId = req.user.id;
 
   try {
     const result = await query(
-      'UPDATE "contatos" SET name = $1, phone = $2 WHERE id = $3 AND user_id = $4 RETURNING *',
-      [name, phone, id, userId]
+      'UPDATE "contatos" SET name = $1, phone = $2, emergencial = $3 WHERE id = $4 AND user_id = $5 RETURNING *',
+      [name, phone, emergencial ?? false, id, userId]
     );
 
     if (result.rows.length === 0) {
