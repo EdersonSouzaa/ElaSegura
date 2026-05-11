@@ -40,7 +40,10 @@ router.get('/', authenticateToken, async (req: any, res: Response) => {
   const userId = req.user.id;
   try {
     const result = await query('SELECT * FROM "ocorrencia" WHERE user_id = $1 ORDER BY created_at DESC', [userId]);
-    res.json(result.rows);
+if (result.rows.length === 0) {
+  return res.json({ message: 'Não há ocorrências registradas no momento', data: [] });
+}
+res.json(result.rows);
   } catch (error) {
     console.error('Error fetching ocorrencias:', error);
     res.status(500).json({ error: 'Internal server error' });
