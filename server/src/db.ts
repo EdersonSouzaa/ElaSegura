@@ -68,6 +68,11 @@ export const initDb = async () => {
       );
     `);
 
+    // Add emergencial column if it doesn't exist (migration for existing DBs)
+    await client.query(`
+      ALTER TABLE "contatos" ADD COLUMN IF NOT EXISTS emergencial BOOLEAN DEFAULT FALSE;
+    `);
+
     // Create SOS table
     await client.query(`
       CREATE TABLE IF NOT EXISTS "SOS" (
