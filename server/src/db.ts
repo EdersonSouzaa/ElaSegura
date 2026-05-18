@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
 import dotenv from 'dotenv';
+import bcrypt from 'bcryptjs';
 
 dotenv.config();
 
@@ -82,6 +83,25 @@ export const initDb = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    const defaultUsers = [
+      { name: 'Maria Silva (Teste)', email: 'maria@teste.com', password: 'senha_segura_123' },
+      { name: 'Ana Costa (Teste)', email: 'ana@teste.com', password: 'senha_segura_123' },
+      { name: 'Julia Alves (Teste)', email: 'julia@teste.com', password: 'senha_segura_123' }
+    ];
+
+    for (const user of defaultUsers) {
+      const checkUser = await client.query('SELECT id FROM "user" WHERE email = $1', [user.email]);
+      
+      if (checkUser.rows.length === 0) {
+        const hashedPassword = await bcrypt.hash(user.password, 10);
+        await client.query(
+          'INSERT INTO "user" (name, email, password) VALUES ($1, $2, $3)',
+          [user.name, user.email, hashedPassword]
+        );
+        console.log(`Usuária de teste criada: ${user.name}`);
+      }
+    }
 
     await client.query('COMMIT');
     console.log('Database tables initialized successfully');
