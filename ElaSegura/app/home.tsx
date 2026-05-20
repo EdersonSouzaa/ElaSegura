@@ -9,7 +9,6 @@ import {
   Platform,
   Modal,
 } from 'react-native';
-import * as Notifications from 'expo-notifications';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { getStyles } from '../styles/home.styles';
 import { useRouter } from 'expo-router';
@@ -22,17 +21,6 @@ const MAPA_IMAGE = require('../assets/images/mapa.png');
 const Contatos_image = require('../assets/images/contatos.png');
 const Alerta_image = require('../assets/images/alerta.png');
 const Areas_image = require('../assets/images/areas.png');
-
-if (Platform.OS !== 'web') {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-    }),
-  });
-}
 
 const Home = () => {
   const router = useRouter();
@@ -65,15 +53,6 @@ const Home = () => {
     }, [])
   );
 
-  useEffect(() => {
-    if (Platform.OS === 'web') return;
-    (async () => {
-      const { status } = await Notifications.requestPermissionsAsync();
-      if (status !== 'granted') {
-        console.log('Permissão para notificações negada');
-      }
-    })();
-  }, []);
 
   const mockOcorrencias = [
     { id: 1, title: 'Roubo', desc: 'pegaram meu celular na esquina', time: '10 Abril, 10:59', type: 'error' },

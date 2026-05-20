@@ -33,6 +33,14 @@ export const initDb = async () => {
       ALTER TABLE "user" ADD COLUMN IF NOT EXISTS profile_picture TEXT;
     `);
 
+    // Add notifications and location preferences if they don't exist
+    await client.query(`
+      ALTER TABLE "user" ADD COLUMN IF NOT EXISTS notifications_enabled BOOLEAN DEFAULT TRUE;
+    `);
+    await client.query(`
+      ALTER TABLE "user" ADD COLUMN IF NOT EXISTS location_enabled BOOLEAN DEFAULT TRUE;
+    `);
+
     // Create Ocorrencia table
     await client.query(`
       CREATE TABLE IF NOT EXISTS "ocorrencia" (
