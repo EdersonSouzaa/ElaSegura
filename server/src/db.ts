@@ -23,7 +23,7 @@ export const initDb = async () => {
         email VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
         notifications_enabled BOOLEAN DEFAULT TRUE,
-        location_enabled BOOLEAN DEFAULT TRUE,
+        location_enabled BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
@@ -38,7 +38,7 @@ export const initDb = async () => {
       ALTER TABLE "user" ADD COLUMN IF NOT EXISTS notifications_enabled BOOLEAN DEFAULT TRUE;
     `);
     await client.query(`
-      ALTER TABLE "user" ADD COLUMN IF NOT EXISTS location_enabled BOOLEAN DEFAULT TRUE;
+      ALTER TABLE "user" ADD COLUMN IF NOT EXISTS location_enabled BOOLEAN DEFAULT FALSE;
     `);
 
     // Create Ocorrencia table
@@ -100,7 +100,7 @@ export const initDb = async () => {
 
     for (const user of defaultUsers) {
       const checkUser = await client.query('SELECT id FROM "user" WHERE email = $1', [user.email]);
-      
+
       if (checkUser.rows.length === 0) {
         const hashedPassword = await bcrypt.hash(user.password, 10);
         await client.query(

@@ -1,43 +1,248 @@
-import React, { useMemo, useRef, useEffect } from 'react';
-import { View, Image, StyleSheet, TouchableOpacity, Text, ScrollView, SafeAreaView, StatusBar, Dimensions } from 'react-native';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, TouchableOpacity, Text, SafeAreaView, StatusBar, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { WebView } from 'react-native-webview';
+import * as Location from 'expo-location';
 import { useTheme } from '../context/ThemeContext';
 import { Colors } from '../constants/theme';
 import { getStyles } from '../styles/mapa.styles';
-
-
-const MAPA_IMG = require('../assets/images/mapa.png');
-const LEGENDA_IMG = require('../assets/images/legenda.png');
 
 export default function MapaDemo() {
   const router = useRouter();
   const { isDarkMode, theme } = useTheme();
   const colors = Colors[theme];
   const styles = useMemo(() => getStyles(isDarkMode, colors), [isDarkMode, colors]);
-  const scrollHorizontalRef = useRef<ScrollView>(null);
-  const scrollVerticalRef = useRef<ScrollView>(null);
 
+  const [activeZone, setActiveZone] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locationLoading, setLocationLoading] = useState(true);
+  const [locationError, setLocationError] = useState(false);
+  const webViewRef = useRef<WebView>(null);
+  const locationSubscription = useRef<Location.LocationSubscription | null>(null);
+
+  const toggleZone = (zone: string) => {
+    setActiveZone((prev) => (prev === zone ? null : zone));
+  };
+
+  const isInactive = (zone: string) => activeZone !== null && activeZone !== zone;
+
+  // Função para enviar a localização do usuário para o WebView
+  const sendLocationToWebView = (latitude: number, longitude: number) => {
+    const jsCode = `
+      (function() {
+        if (typeof window.updateUserLocation === 'function') {
+          window.updateUserLocation(${latitude}, ${longitude});
+        }
+      })();
+    `;
+    webViewRef.current?.injectJavaScript(jsCode);
+  };
+
+  // Solicita permissão e inicia o rastreamento de localização em tempo real
   useEffect(() => {
-    setTimeout(() => {
-      const screenWidth = Dimensions.get('window').width;
-      const screenHeight = Dimensions.get('window').height;
-      
-      const mapWidth = 1500; // Largura da imagem no seu styles
-      const mapHeight = 1200; // Altura da imagem no seu styles
+    let isMounted = true;
 
-      const centerX = (mapWidth / 2) - (screenWidth / 2);
-      const centerY = (mapHeight / 2) - (screenHeight / 2);
+    const startLocationTracking = async () => {
+      try {
+        // Solicita permissão de localização
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          if (isMounted) {
+            setLocationError(true);
+            setLocationLoading(false);
+          }
+          Alert.alert(
+            'Permissão de Localização',
+            'É necessário permitir o acesso à localização para exibir sua posição em tempo real no mapa.'
+          );
+          return;
+        }
 
-      scrollHorizontalRef.current?.scrollTo({ x: centerX, animated: false });
-      scrollVerticalRef.current?.scrollTo({ y: centerY, animated: false });
-    }, 100);
+        // Obtém a localização inicial
+        const initialLocation = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+
+        if (isMounted) {
+          const { latitude, longitude } = initialLocation.coords;
+          setUserLocation({ latitude, longitude });
+          setLocationLoading(false);
+          // Envia a localização inicial para o WebView
+          sendLocationToWebView(latitude, longitude);
+        }
+
+        // Inicia o rastreamento em tempo real
+        locationSubscription.current = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.Balanced,
+            timeInterval: 5000, // Atualiza a cada 5 segundos
+            distanceInterval: 10, // Ou a cada 10 metros de deslocamento
+          },
+          (location) => {
+            if (isMounted) {
+              const { latitude, longitude } = location.coords;
+              setUserLocation({ latitude, longitude });
+              sendLocationToWebView(latitude, longitude);
+            }
+          }
+        );
+      } catch (error) {
+        console.error('Erro ao obter localização:', error);
+        if (isMounted) {
+          setLocationError(true);
+          setLocationLoading(false);
+        }
+        Alert.alert('Erro', 'Não foi possível obter sua localização. Verifique se o GPS está ativado.');
+      }
+    };
+
+    startLocationTracking();
+
+    // Limpa o rastreamento ao desmontar o componente
+    return () => {
+      isMounted = false;
+      if (locationSubscription.current) {
+        locationSubscription.current.remove();
+      }
+    };
   }, []);
+
+  const leafletHTML = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <style>
+            body { padding: 0; margin: 0; background-color: #E8EAED; }
+            html, body, #map { height: 100%; width: 100%; }
+            .leaflet-control-attribution { display: none !important; }
+
+            /* Animação do marcador de localização do usuário */
+            @keyframes userPulse {
+                0% { transform: scale(1); opacity: 1; }
+                50% { transform: scale(1.6); opacity: 0.5; }
+                100% { transform: scale(1); opacity: 1; }
+            }
+
+            .user-location-marker {
+                width: 24px;
+                height: 24px;
+                background-color: #007AFF;
+                border: 3px solid #FFFFFF;
+                border-radius: 50%;
+                box-shadow: 0 2px 8px rgba(0, 122, 255, 0.5);
+            }
+
+            .user-location-pulse {
+                width: 24px;
+                height: 24px;
+                background-color: rgba(0, 122, 255, 0.3);
+                border-radius: 50%;
+                animation: userPulse 2s ease-in-out infinite;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="map"></div>
+        <script>
+            var bounds = [
+                [-3.900, -38.650],
+                [-3.650, -38.350]
+            ];
+
+            var map = L.map('map', {
+                zoomControl: false,
+                maxBounds: bounds,
+                maxBoundsViscosity: 1.0,
+                minZoom: 14
+            }).setView([-3.766, -38.483], 14);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19
+            }).addTo(map);
+
+            var activeFilter = "${activeZone || 'all'}";
+
+            // Zonas Seguras (Verde)
+            if (activeFilter === 'all' || activeFilter === 'seguras') {
+                L.circle([-3.771, -38.479], { color: 'rgba(0, 255, 0, 0.8)', fillColor: 'rgba(0, 255, 0, 0.4)', fillOpacity: 1, radius: 800 }).addTo(map);
+                L.circle([-3.754, -38.490], { color: 'rgba(0, 255, 0, 0.8)', fillColor: 'rgba(0, 255, 0, 0.4)', fillOpacity: 1, radius: 1000 }).addTo(map);
+            }
+
+            // Zonas de Alerta (Amarelo)
+            if (activeFilter === 'all' || activeFilter === 'alerta') {
+                L.circle([-3.760, -38.470], { color: 'rgba(255, 204, 0, 0.8)', fillColor: 'rgba(255, 204, 0, 0.4)', fillOpacity: 1, radius: 600 }).addTo(map);
+            }
+
+            // Zonas de Perigo (Vermelho)
+            if (activeFilter === 'all' || activeFilter === 'perigo') {
+                L.circle([-3.768, -38.500], { color: 'rgba(255, 59, 48, 0.8)', fillColor: 'rgba(255, 59, 48, 0.4)', fillOpacity: 1, radius: 900 }).addTo(map);
+            }
+
+            // --- Localização do Usuário em Tempo Real ---
+            var userMarker = null;
+            var userPulseMarker = null;
+
+            // Função chamada pelo React Native para atualizar a localização do usuário
+            window.updateUserLocation = function(lat, lng) {
+                var userLatLng = [lat, lng];
+
+                // Remove marcadores anteriores
+                if (userMarker) {
+                    map.removeLayer(userMarker);
+                }
+                if (userPulseMarker) {
+                    map.removeLayer(userPulseMarker);
+                }
+
+                // Cria ícone personalizado para o marcador do usuário
+                var userIcon = L.divIcon({
+                    className: 'user-location-div-icon',
+                    html: '<div class="user-location-pulse"></div><div class="user-location-marker"></div>',
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                });
+
+                // Adiciona marcador de pulso (efeito visual)
+                userPulseMarker = L.marker(userLatLng, { icon: userIcon }).addTo(map);
+
+                // Adiciona marcador principal
+                userMarker = L.marker(userLatLng, {
+                    icon: L.divIcon({
+                        className: 'user-location-div-icon',
+                        html: '<div style="width:14px;height:14px;background:#007AFF;border:3px solid #FFF;border-radius:50%;box-shadow:0 2px 8px rgba(0,122,255,0.6);"></div>',
+                        iconSize: [14, 14],
+                        iconAnchor: [7, 7]
+                    })
+                }).addTo(map);
+
+                // Centraliza o mapa na localização do usuário
+                map.panTo(userLatLng);
+            };
+
+            // Recebe mensagens do React Native
+            window.addEventListener('message', function(event) {
+                try {
+                    var data = JSON.parse(event.data);
+                    if (data.type === 'location' && data.latitude && data.longitude) {
+                        window.updateUserLocation(data.latitude, data.longitude);
+                    }
+                } catch (e) {
+                    console.error('Erro ao processar mensagem:', e);
+                }
+            });
+        </script>
+    </body>
+    </html>
+  `;
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={colors.background} />
-      
+
       {/* Cabeçalho */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -47,36 +252,94 @@ export default function MapaDemo() {
         <View style={{ width: 28 }} />
       </View>
 
-      {/* Container Principal onde a mágica do 'Absolute' acontece */}
+      {/* Container Principal */}
       <View style={styles.mapContainer}>
-        
-        {/* Mapa Navegável (Ordem Invertida para destravar o Android) */}
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false} 
-          style={{ flex: 1 }}
-          ref={scrollHorizontalRef} // Adicione isso
-        >
-          <ScrollView 
-            showsVerticalScrollIndicator={false} 
-            style={{ flex: 1 }}
-            ref={scrollVerticalRef} // Adicione isso
-          >
-            <Image
-              source={MAPA_IMG}
-              style={styles.mapImage}
-              resizeMode="cover"
-            />
-          </ScrollView>
-        </ScrollView>
 
-        {/* Legenda Fixa no Canto Inferior Direito */}
+        {/* Mapa com Localização em Tempo Real */}
+        <WebView
+          ref={webViewRef}
+          source={{ html: leafletHTML }}
+          style={StyleSheet.absoluteFillObject}
+          scrollEnabled={false}
+          bounces={false}
+          onMessage={(event) => {
+            // Processa mensagens recebidas do WebView se necessário
+            console.log('Mensagem do WebView:', event.nativeEvent.data);
+          }}
+        />
+
+        {/* Indicador de carregamento de localização */}
+        {locationLoading && (
+          <View style={{
+            position: 'absolute',
+            top: 20,
+            left: 20,
+            backgroundColor: 'rgba(0, 122, 255, 0.9)',
+            borderRadius: 20,
+            paddingHorizontal: 14,
+            paddingVertical: 8,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+          }}>
+            <MaterialCommunityIcons name="loading" size={18} color="#FFF" />
+            <Text style={{ color: '#FFF', fontSize: 13, fontWeight: '600' }}>
+              Obtendo localização...
+            </Text>
+          </View>
+        )}
+
+        {/* Indicador de erro de localização */}
+        {locationError && !locationLoading && (
+          <View style={{
+            position: 'absolute',
+            top: 20,
+            left: 20,
+            backgroundColor: 'rgba(255, 59, 48, 0.9)',
+            borderRadius: 20,
+            paddingHorizontal: 14,
+            paddingVertical: 8,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+          }}>
+            <MaterialCommunityIcons name="alert-circle" size={18} color="#FFF" />
+            <Text style={{ color: '#FFF', fontSize: 13, fontWeight: '600' }}>
+              Localização indisponível
+            </Text>
+          </View>
+        )}
+
+        {/* Legenda Selecionável no Canto Inferior Direito */}
         <View style={styles.legendaContainer}>
-          <Image
-            source={LEGENDA_IMG}
-            style={styles.legendaImage}
-            resizeMode="contain"
-          />
+          <Text style={styles.legendaTitle}>Zonas</Text>
+
+          <TouchableOpacity
+            style={[styles.legendaItem, isInactive('seguras') && styles.legendaItemInactive]}
+            onPress={() => toggleZone('seguras')}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.legendaColorBox, { backgroundColor: '#34C759' }]} />
+            <Text style={styles.legendaItemText}>Seguras</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.legendaItem, isInactive('alerta') && styles.legendaItemInactive]}
+            onPress={() => toggleZone('alerta')}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.legendaColorBox, { backgroundColor: '#FFCC00' }]} />
+            <Text style={styles.legendaItemText}>Alerta</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.legendaItem, { marginBottom: 0 }, isInactive('perigo') && styles.legendaItemInactive]}
+            onPress={() => toggleZone('perigo')}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.legendaColorBox, { backgroundColor: '#FF3B30' }]} />
+            <Text style={styles.legendaItemText}>Perigo</Text>
+          </TouchableOpacity>
         </View>
 
       </View>
