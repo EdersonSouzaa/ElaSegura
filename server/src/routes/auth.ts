@@ -34,7 +34,7 @@ router.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const result = await query(
-      'INSERT INTO "user" (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email',
+      'INSERT INTO "user" (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email, profile_picture',
       [name, email, hashedPassword]
     );
 
@@ -75,7 +75,7 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
 
     res.json({
-      user: { id: user.id, name: user.name, email: user.email },
+      user: { id: user.id, name: user.name, email: user.email, profile_picture: user.profile_picture },
       token
     });
   } catch (error) {
