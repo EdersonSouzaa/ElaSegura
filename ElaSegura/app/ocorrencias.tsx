@@ -42,6 +42,7 @@ export default function Ocorrencias() {
   const styles = useMemo(() => getStyles(isDarkMode, colors), [isDarkMode, colors]);
 
   const [occurrences, setOccurrences] = useState(initialOccurrences);
+  const [userId, setUserId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('proximas');
   const [radiusFilter, setRadiusFilter] = useState(1000);
   const [modalVisible, setModalVisible] = useState(false);
@@ -53,9 +54,20 @@ export default function Ocorrencias() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const storedData = await AsyncStorage.getItem('@occurrences_data');
+        const savedUser = await AsyncStorage.getItem('user');
+        let activeUserId: number | null = null;
+        if (savedUser) {
+          const user = JSON.parse(savedUser);
+          activeUserId = user.id;
+          setUserId(user.id);
+        }
+        
+        const key = activeUserId ? `@occurrences_data_${activeUserId}` : '@occurrences_data';
+        const storedData = await AsyncStorage.getItem(key);
         if (storedData) {
           setOccurrences(JSON.parse(storedData));
+        } else {
+          setOccurrences([]);
         }
       } catch (e) {
         console.error('Failed to load occurrences', e);
@@ -64,9 +76,11 @@ export default function Ocorrencias() {
     loadData();
   }, []);
 
-  const saveOccurrences = async (newOccurrences: Occurrence[]) => {
+  const saveOccurrences = async (newOccurrences: Occurrence[], activeUserId?: number | null) => {
     try {
-      await AsyncStorage.setItem('@occurrences_data', JSON.stringify(newOccurrences));
+      const idToUse = activeUserId !== undefined ? activeUserId : userId;
+      const key = idToUse ? `@occurrences_data_${idToUse}` : '@occurrences_data';
+      await AsyncStorage.setItem(key, JSON.stringify(newOccurrences));
     } catch (e) {
       console.error('Failed to save occurrences', e);
     }
