@@ -59,13 +59,19 @@ export default function MapaDemo() {
           return;
         }
 
-        // Obtém a localização inicial
-        const initialLocation = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
+        // Obtém a localização de forma rápida tentando primeiro a última conhecida
+        const lastKnown = await Location.getLastKnownPositionAsync({});
+        let initialCoords = lastKnown ? lastKnown.coords : null;
 
-        if (isMounted) {
-          const { latitude, longitude } = initialLocation.coords;
+        if (!initialCoords) {
+          const initialLocation = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+          initialCoords = initialLocation.coords;
+        }
+
+        if (initialCoords && isMounted) {
+          const { latitude, longitude } = initialCoords;
           setUserLocation({ latitude, longitude });
           setLocationLoading(false);
           // Envia a localização inicial para o WebView
