@@ -19,7 +19,6 @@ import { useTheme } from '../context/ThemeContext';
 import { Colors } from '../constants/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../services/api';
-import * as Notifications from 'expo-notifications';
 import * as Location from 'expo-location';
 import Constants from 'expo-constants';
 
@@ -269,12 +268,12 @@ const Home = () => {
                   setLocationLoading(false);
                   setLocationPopupVisible(false);
 
-                  const { status: notifStatus } = await Notifications.getPermissionsAsync();
-                  if (notifStatus !== 'granted') {
-                    await Notifications.requestPermissionsAsync();
-                  }
-
                   if (Constants.appOwnership !== 'expo') {
+                    const Notifications = require('expo-notifications');
+                    const { status: notifStatus } = await Notifications.getPermissionsAsync();
+                    if (notifStatus !== 'granted') {
+                      await Notifications.requestPermissionsAsync();
+                    }
                     await Notifications.scheduleNotificationAsync({
                       content: {
                         title: 'Localização Ativada',
