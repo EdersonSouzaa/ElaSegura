@@ -1,4 +1,4 @@
-import { StyleSheet, Platform } from 'react-native';
+import { StyleSheet, Platform, StatusBar } from 'react-native';
 
 export const getStyles = (isDarkMode: boolean, colors: any) => StyleSheet.create({
   container: { 
@@ -10,7 +10,7 @@ export const getStyles = (isDarkMode: boolean, colors: any) => StyleSheet.create
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? 15 : 10, // Copiado do seu home.styles.ts para manter o padrão
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 35) : 10,
     paddingBottom: 20,
     backgroundColor: isDarkMode ? colors.cardBackground : '#FFF',
     elevation: 3,
