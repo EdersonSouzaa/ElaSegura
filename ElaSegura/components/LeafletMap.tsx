@@ -24,12 +24,26 @@ export type IncidentMarker = {
 
 export type LatLngBounds = [[number, number], [number, number]];
 
+/** User-placed area highlighted on the map (feat #71). */
+export type MarkedZone = {
+  id: string;
+  lat: number;
+  lng: number;
+  level: ZoneLevel;
+  radius: number;
+};
+
 type Props = {
   userCoords: Coords | null;
   riskZones: RiskZone[];
   incidents: IncidentMarker[];
   showIncidents: boolean;
   activeZoneFilter?: ZoneLevel | null;
+  markedZones?: MarkedZone[];
+  /** Non-null = "marking mode": the next map tap drops a zone of this color. */
+  drawColor?: ZoneLevel | null;
+  onMapPress?: (lat: number, lng: number) => void;
+  onMarkPress?: (id: string) => void;
   maxBounds?: LatLngBounds;
   initialCenter?: [number, number];
   initialZoom?: number;
@@ -100,6 +114,8 @@ const buildHtml = (isDarkMode: boolean, interactive: boolean) => `<!DOCTYPE html
   let userCircle = null;
   let riskLayer = L.layerGroup().addTo(map);
   let incidentsLayer = L.layerGroup().addTo(map);
+  let markedLayer = L.layerGroup().addTo(map);
+  let drawMode = false;
   let firstFix = true;
 
   const pulseIcon = L.divIcon({ className: '', html: '<div class="user-pulse"></div>', iconSize: [22, 22], iconAnchor: [11, 11] });
@@ -167,11 +183,39 @@ const buildHtml = (isDarkMode: boolean, interactive: boolean) => `<!DOCTYPE html
     });
   }
 
+  function setMarkedZones(items) {
+    markedLayer.clearLayers();
+    items.forEach(z => {
+      const circle = L.circle([z.lat, z.lng], {
+        radius: z.radius,
+        color: z.color,
+        weight: 2,
+        opacity: 1,
+        fillColor: z.color,
+        fillOpacity: 0.35,
+        dashArray: '6 4',
+      }).addTo(markedLayer);
+      circle.on('click', function (ev) {
+        L.DomEvent.stopPropagation(ev);
+        send({ type: 'markClick', id: z.id });
+      });
+    });
+  }
+
+  function setDrawMode(active) {
+    drawMode = !!active;
+    map.getContainer().style.cursor = drawMode ? 'crosshair' : '';
+  }
+
+  map.on('click', function (e) {
+    if (drawMode) send({ type: 'mapClick', lat: e.latlng.lat, lng: e.latlng.lng });
+  });
+
   function recenter() {
     if (userDotMarker) map.setView(userDotMarker.getLatLng(), 16);
   }
 
-  window.__map = { setBounds, setView, setUser, setRiskZones, setIncidents, recenter };
+  window.__map = { setBounds, setView, setUser, setRiskZones, setIncidents, setMarkedZones, setDrawMode, recenter };
   send({ type: 'ready' });
 </script>
 </body>
@@ -184,6 +228,10 @@ export const LeafletMap = React.forwardRef<{ recenter: () => void }, Props>(func
     incidents,
     showIncidents,
     activeZoneFilter = null,
+    markedZones = [],
+    drawColor = null,
+    onMapPress,
+    onMarkPress,
     maxBounds,
     initialCenter,
     initialZoom,
@@ -213,6 +261,17 @@ export const LeafletMap = React.forwardRef<{ recenter: () => void }, Props>(func
     [riskZones]
   );
 
+  const markedPayload = useMemo(
+    () => markedZones.map((z) => ({
+      id: z.id,
+      lat: z.lat,
+      lng: z.lng,
+      radius: z.radius,
+      color: ZONE_COLORS[z.level],
+    })),
+    [markedZones]
+  );
+
   useEffect(() => {
     if (!userCoords) return;
     inject(`window.__map.setUser(${userCoords.latitude}, ${userCoords.longitude}, 0)`);
@@ -226,6 +285,14 @@ export const LeafletMap = React.forwardRef<{ recenter: () => void }, Props>(func
     const payload = incidents.map((i) => ({ lat: i.lat, lng: i.lng, type: i.type, title: i.title ?? null }));
     inject(`window.__map.setIncidents(${JSON.stringify(payload)}, ${showIncidents})`);
   }, [incidents, showIncidents]);
+
+  useEffect(() => {
+    inject(`window.__map.setMarkedZones(${JSON.stringify(markedPayload)})`);
+  }, [markedPayload]);
+
+  useEffect(() => {
+    inject(`window.__map.setDrawMode(${drawColor != null})`);
+  }, [drawColor]);
 
   React.useImperativeHandle(ref, () => ({
     recenter: () => inject('window.__map.recenter()'),
@@ -258,6 +325,12 @@ export const LeafletMap = React.forwardRef<{ recenter: () => void }, Props>(func
               inject(`window.__map.setRiskZones(${JSON.stringify(zonesPayload)}, ${JSON.stringify(activeZoneFilter)})`);
               const incPayload = incidents.map((i) => ({ lat: i.lat, lng: i.lng, type: i.type, title: i.title ?? null }));
               inject(`window.__map.setIncidents(${JSON.stringify(incPayload)}, ${showIncidents})`);
+              inject(`window.__map.setMarkedZones(${JSON.stringify(markedPayload)})`);
+              inject(`window.__map.setDrawMode(${drawColor != null})`);
+            } else if (msg.type === 'mapClick') {
+              onMapPress?.(msg.lat, msg.lng);
+            } else if (msg.type === 'markClick') {
+              onMarkPress?.(msg.id);
             }
           } catch {}
         }}

@@ -19,8 +19,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
 import { Colors } from '../constants/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { LeafletMap } from '../components/LeafletMap';
+import { LeafletMap, type MarkedZone } from '../components/LeafletMap';
 import { useLocation } from '../hooks/use-location';
+import { loadMarkedZones } from '../hooks/use-marked-zones';
 import { api } from '../services/api';
 import * as Location from 'expo-location';
 import Constants from 'expo-constants';
@@ -39,6 +40,7 @@ const Home = () => {
   const [userName, setUserName] = useState('');
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [occurrences, setOccurrences] = useState<any[]>([]);
+  const [markedZones, setMarkedZones] = useState<MarkedZone[]>([]);
   const { coords } = useLocation();
 
   const colors = Colors[theme];
@@ -86,6 +88,11 @@ const Home = () => {
     }
   }, []);
 
+  // Áreas marcadas no mapa (feat #71) — exibidas também no preview da home
+  const loadMarked = useCallback(async () => {
+    setMarkedZones(await loadMarkedZones());
+  }, []);
+
   // --- EFEITO DE FOCO (Unificado em um único hook) ---
 
   useFocusEffect(
@@ -93,7 +100,8 @@ const Home = () => {
       loadUserData();
       loadLocationPreference();
       loadOccurrences();
-    }, [loadUserData, loadLocationPreference, loadOccurrences])
+      loadMarked();
+    }, [loadUserData, loadLocationPreference, loadOccurrences, loadMarked])
   );
 
   return (
@@ -144,6 +152,7 @@ const Home = () => {
               riskZones={[]}
               incidents={[]}
               showIncidents={false}
+              markedZones={markedZones}
               isDarkMode={isDarkMode}
               interactive={false}
             />

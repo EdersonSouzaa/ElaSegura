@@ -8,6 +8,7 @@ import { useTheme } from '../context/ThemeContext';
 import { Colors } from '../constants/theme';
 import { getStyles } from '../styles/mapa.styles';
 import { useLocation } from '../hooks/use-location';
+import { useMarkedZones } from '../hooks/use-marked-zones';
 import {
   LeafletMap,
   type RiskZone,
@@ -22,6 +23,9 @@ const FORTALEZA_BOUNDS: LatLngBounds = [
   [-3.65, -38.35],
 ];
 const FORTALEZA_CENTER: [number, number] = [-3.766, -38.483];
+
+/** Raio (em metros) das áreas marcadas pelo usuário (feat #71). */
+const MARK_RADIUS = 250;
 
 const SAMPLE_RISK_ZONES: RiskZone[] = [
   { id: 1, lat: -3.771, lng: -38.479, radius: 800, level: 'safe', label: 'Área segura' },
@@ -43,13 +47,44 @@ export default function MapaScreen() {
   const styles = useMemo(() => getStyles(isDarkMode, colors), [isDarkMode, colors]);
 
   const { coords, errorMsg, loading } = useLocation();
-  const [activeZone, setActiveZone] = useState<ZoneLevel | null>(null);
   const [incidents, setIncidents] = useState<IncidentMarker[]>([]);
   const [sharing, setSharing] = useState(false);
   const mapRef = useRef<{ recenter: () => void }>(null);
 
-  const toggleZone = (zone: ZoneLevel) => {
-    setActiveZone((prev) => (prev === zone ? null : zone));
+  // feat #71 — marcação de áreas: cor "armada" na legenda + áreas marcadas (persistidas no device)
+  const [markColor, setMarkColor] = useState<ZoneLevel | null>(null);
+  const { markedZones, setMarkedZones } = useMarkedZones();
+
+  const selectMarkColor = (level: ZoneLevel) => {
+    setMarkColor((prev) => (prev === level ? null : level));
+  };
+
+  // Toque no mapa em modo de marcação: adiciona uma área da cor armada
+  const handleMapPress = (lat: number, lng: number) => {
+    if (!markColor) return;
+    setMarkedZones((prev) => [
+      ...prev,
+      {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        lat,
+        lng,
+        level: markColor,
+        radius: MARK_RADIUS,
+      },
+    ]);
+  };
+
+  // Toque numa área marcada (fora do modo de marcação): oferece remover
+  const handleMarkPress = (id: string) => {
+    if (markColor) return; // marcando: não remove
+    Alert.alert('Remover marcação', 'Deseja remover esta área marcada?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Remover',
+        style: 'destructive',
+        onPress: () => setMarkedZones((prev) => prev.filter((z) => z.id !== id)),
+      },
+    ]);
   };
 
   useEffect(() => {
@@ -131,7 +166,10 @@ export default function MapaScreen() {
           riskZones={SAMPLE_RISK_ZONES}
           incidents={incidents}
           showIncidents
-          activeZoneFilter={activeZone}
+          markedZones={markedZones}
+          drawColor={markColor}
+          onMapPress={handleMapPress}
+          onMarkPress={handleMarkPress}
           maxBounds={FORTALEZA_BOUNDS}
           initialCenter={FORTALEZA_CENTER}
           initialZoom={14}
@@ -155,11 +193,22 @@ export default function MapaScreen() {
           </View>
         )}
 
-        {/* Legenda interativa (Seguras / Alerta / Perigo) */}
+        {/* Dica do modo de marcação (feat #71) */}
+        {markColor && (
+          <View style={[styles.statusBanner, { backgroundColor: 'rgba(156,39,176,0.95)' }]}>
+            <MaterialCommunityIcons name="map-marker-plus" size={18} color="#FFF" />
+            <Text style={styles.statusText}>
+              Toque no mapa para marcar uma área. Toque na cor de novo para sair.
+            </Text>
+          </View>
+        )}
+
+        {/* Legenda (toque numa cor para marcar áreas no mapa — feat #71) */}
         <View style={styles.legendaContainer}>
-          <Text style={styles.legendaTitle}>Zonas</Text>
+          <Text style={styles.legendaTitle}>Marcar área</Text>
           {ZONES.map((z, i) => {
-            const inactive = activeZone !== null && activeZone !== z.level;
+            const selected = markColor === z.level;
+            const inactive = markColor !== null && !selected;
             const isLast = i === ZONES.length - 1;
             return (
               <TouchableOpacity
@@ -169,11 +218,19 @@ export default function MapaScreen() {
                   isLast && { marginBottom: 0 },
                   inactive && styles.legendaItemInactive,
                 ]}
-                onPress={() => toggleZone(z.level)}
+                onPress={() => selectMarkColor(z.level)}
                 activeOpacity={0.7}
               >
                 <View style={[styles.legendaColorBox, { backgroundColor: z.color }]} />
                 <Text style={styles.legendaItemText}>{z.label}</Text>
+                {selected && (
+                  <MaterialCommunityIcons
+                    name="check-circle"
+                    size={18}
+                    color={z.color}
+                    style={{ marginLeft: 8 }}
+                  />
+                )}
               </TouchableOpacity>
             );
           })}
