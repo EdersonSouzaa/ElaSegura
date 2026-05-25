@@ -11,6 +11,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { getStyles } from '../styles/home.styles';
 import { useRouter } from 'expo-router';
@@ -18,11 +19,12 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
 import { Colors } from '../constants/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LeafletMap } from '../components/LeafletMap';
+import { useLocation } from '../hooks/use-location';
 import { api } from '../services/api';
 import * as Location from 'expo-location';
 import Constants from 'expo-constants';
 
-const MAPA_IMAGE = require('../assets/images/mapa.png');
 const Contatos_image = require('../assets/images/contatos.png');
 const Alerta_image = require('../assets/images/alerta.png');
 const Areas_image = require('../assets/images/areas.png');
@@ -37,6 +39,7 @@ const Home = () => {
   const [userName, setUserName] = useState('');
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [occurrences, setOccurrences] = useState<any[]>([]);
+  const { coords } = useLocation();
 
   const colors = Colors[theme];
   const styles = useMemo(() => getStyles(isDarkMode, colors), [isDarkMode, colors]);
@@ -94,7 +97,7 @@ const Home = () => {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={isDarkMode ? colors.cardBackground : "#FFF"} />
 
       <ScrollView
@@ -124,7 +127,7 @@ const Home = () => {
         </View>
 
         <View style={styles.content}>
-          {/* Mapa */}
+          {/* Mapa em tempo real (preview) */}
           <TouchableOpacity
             activeOpacity={0.9}
             style={styles.mapCard}
@@ -136,11 +139,18 @@ const Home = () => {
               }
             }}
           >
-            <Image
-              source={MAPA_IMAGE}
-              style={styles.mapImage}
-              resizeMode="cover"
+            <LeafletMap
+              userCoords={coords}
+              riskZones={[]}
+              incidents={[]}
+              showIncidents={false}
+              isDarkMode={isDarkMode}
+              interactive={false}
             />
+            <View style={styles.mapCardBadge}>
+              <MaterialCommunityIcons name="map-outline" size={14} color="#fff" />
+              <Text style={styles.mapCardBadgeText}>Ver mapa em tempo real</Text>
+            </View>
           </TouchableOpacity>
 
           {/* Acesso rápido */}
@@ -350,7 +360,7 @@ const Home = () => {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 

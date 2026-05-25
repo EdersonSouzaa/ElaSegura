@@ -1,8 +1,8 @@
 import { StyleSheet, Platform, StatusBar } from 'react-native';
 
 export const getStyles = (isDarkMode: boolean, colors: any) => StyleSheet.create({
-  container: { 
-    flex: 1, 
+  container: {
+    flex: 1,
     backgroundColor: isDarkMode ? colors.background : '#F5F5F5',
   },
   header: {
@@ -20,34 +20,66 @@ export const getStyles = (isDarkMode: boolean, colors: any) => StyleSheet.create
     shadowRadius: 3,
     zIndex: 10,
   },
-  title: { 
-    fontSize: 20, 
+  title: {
+    fontSize: 20,
     fontWeight: 'bold',
     color: colors.text,
   },
-  backButton: { 
-    padding: 5 
+  backButton: {
+    padding: 5,
   },
   mapContainer: {
     flex: 1,
     position: 'relative',
-    backgroundColor: isDarkMode ? '#1A1A1A' : '#E8EAED', 
+    backgroundColor: isDarkMode ? '#1A1A1A' : '#E8EAED',
   },
-  scrollVertical: {
-    flex: 1,
+  fabColumn: {
+    position: 'absolute',
+    right: 16,
+    bottom: 24,
+    gap: 12,
   },
-  mapImage: {
-    width: 1500, 
-    height: 1200,
+  fab: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: isDarkMode ? colors.cardBackground : '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  fabPrimary: {
+    backgroundColor: colors.primary ?? '#9C27B0',
+  },
+  statusBanner: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  statusText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+    flexShrink: 1,
   },
   legendaContainer: {
     position: 'absolute',
     bottom: 30,
-    right: 20,
-    backgroundColor: isDarkMode ? 'rgba(26, 26, 26, 0.85)' : 'rgba(255, 255, 255, 0.9)', 
+    left: 20,
+    backgroundColor: isDarkMode ? 'rgba(26, 26, 26, 0.85)' : 'rgba(255, 255, 255, 0.9)',
     borderRadius: 18,
     paddingVertical: 18,
-    paddingHorizontal: 22, 
+    paddingHorizontal: 22,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -74,7 +106,7 @@ export const getStyles = (isDarkMode: boolean, colors: any) => StyleSheet.create
   legendaColorBox: {
     width: 22,
     height: 22,
-    borderRadius: 11, // Circular for a modern look
+    borderRadius: 11,
     marginRight: 14,
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.8)',
@@ -88,5 +120,5 @@ export const getStyles = (isDarkMode: boolean, colors: any) => StyleSheet.create
     fontSize: 16,
     fontWeight: '600',
     color: colors.secondary,
-  }
+  },
 });
