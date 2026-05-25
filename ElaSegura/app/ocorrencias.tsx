@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Location from 'expo-location';
+import { api } from '../services/api';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -134,10 +136,21 @@ const filteredOccurrences = useMemo(() => {
     return `${date}, ${time}`;
   };
 
-  const handleRegisterOccurrence = () => {
-    if (!canSave) {
-      return;
-    }
+  const handleRegisterOccurrence = async () => {
+    if (!canSave) return;
+
+    let lat: number | null = null;
+    let lng: number | null = null;
+
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const lastKnown = await Location.getLastKnownPositionAsync({});
+        const loc = lastKnown ?? await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        lat = loc.coords.latitude;
+        lng = loc.coords.longitude;
+      }
+    } catch {}
 
     const newOccurrence: Occurrence = {
       id: Date.now(),
@@ -151,6 +164,17 @@ const filteredOccurrences = useMemo(() => {
     const updatedOccurrences = [newOccurrence, ...occurrences];
     setOccurrences(updatedOccurrences);
     saveOccurrences(updatedOccurrences);
+
+    AsyncStorage.getItem('userToken').then(token => {
+      if (!token) return;
+      api.post('/ocorrencias', {
+        title: title.trim(),
+        description: description.trim(),
+        type,
+        latitude: lat,
+        longitude: lng,
+      }, token).catch(err => console.error('Erro ao salvar ocorrência na API:', err));
+    });
 
     setCategoryFilter('Todos');
     setActiveTab('gerais');

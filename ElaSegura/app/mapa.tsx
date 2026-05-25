@@ -7,6 +7,8 @@ import * as Location from 'expo-location';
 import { useTheme } from '../context/ThemeContext';
 import { Colors } from '../constants/theme';
 import { getStyles } from '../styles/mapa.styles';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { api } from '../services/api';
 
 export default function MapaDemo() {
   const router = useRouter();
@@ -18,6 +20,7 @@ export default function MapaDemo() {
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationLoading, setLocationLoading] = useState(true);
   const [locationError, setLocationError] = useState(false);
+  const [occurrences, setOccurrences] = useState<any[]>([]);
   const webViewRef = useRef<WebView>(null);
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
 
@@ -26,6 +29,29 @@ export default function MapaDemo() {
   };
 
   const isInactive = (zone: string) => activeZone !== null && activeZone !== zone;
+
+  const sendOccurrencesToWebView = (occs: any[]) => {
+    const jsCode = `
+      (function() {
+        if (typeof window.addOccurrenceMarkers === 'function') {
+          window.addOccurrenceMarkers(${JSON.stringify(occs)});
+        }
+      })();
+    `;
+    webViewRef.current?.injectJavaScript(jsCode);
+  };
+
+  const fetchNearbyOccurrences = async (lat: number, lng: number) => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) return;
+      const data = await api.get(`/ocorrencias/proximas?lat=${lat}&lng=${lng}&radius=5000`, token);
+      setOccurrences(data);
+      sendOccurrencesToWebView(data);
+    } catch (error) {
+      console.error('Erro ao buscar ocorrências próximas:', error);
+    }
+  };
 
   // Função para enviar a localização do usuário para o WebView
   const sendLocationToWebView = (latitude: number, longitude: number) => {
@@ -76,6 +102,7 @@ export default function MapaDemo() {
           setLocationLoading(false);
           // Envia a localização inicial para o WebView
           sendLocationToWebView(latitude, longitude);
+          fetchNearbyOccurrences(latitude, longitude);
         }
 
         // Inicia o rastreamento em tempo real
@@ -227,6 +254,33 @@ export default function MapaDemo() {
 
                 // Centraliza o mapa na localização do usuário
                 map.panTo(userLatLng);
+            };
+
+            // Marcadores de ocorrências
+            var occurrenceMarkers = [];
+
+            window.addOccurrenceMarkers = function(occurrences) {
+              occurrenceMarkers.forEach(function(m) { map.removeLayer(m); });
+              occurrenceMarkers = [];
+
+              occurrences.forEach(function(occ) {
+                if (!occ.latitude || !occ.longitude) return;
+
+                var color = occ.type === 'error' ? '#FF3B30' : '#FFCC00';
+                var textColor = occ.type === 'error' ? 'white' : '#333';
+                var icon = L.divIcon({
+                  className: '',
+                  html: '<div style="width:32px;height:32px;background:' + color + ';border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:' + textColor + ';font-weight:bold;font-size:17px;">!</div>',
+                  iconSize: [32, 32],
+                  iconAnchor: [16, 16]
+                });
+
+                var marker = L.marker([occ.latitude, occ.longitude], { icon: icon })
+                  .addTo(map)
+                  .bindPopup('<b>' + occ.title + '</b><br><small>' + (occ.description || '') + '</small>');
+
+                occurrenceMarkers.push(marker);
+              });
             };
 
             // Recebe mensagens do React Native
