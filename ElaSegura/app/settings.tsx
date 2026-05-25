@@ -37,6 +37,9 @@ export default function Settings() {
   // Biometria local
   const [isBiometryEnabled, setIsBiometryEnabled] = useState(false);
 
+  // Modo camuflado
+  const [isCamouflageEnabled, setIsCamouflageEnabled] = useState(false);
+
   // Alterar Senha
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -80,9 +83,10 @@ export default function Settings() {
 
       // Busca biometria salva localmente
       const biometry = await AsyncStorage.getItem('isBiometryEnabled');
-      if (biometry !== null) {
-        setIsBiometryEnabled(biometry === 'true');
-      }
+      if (biometry !== null) setIsBiometryEnabled(biometry === 'true');
+
+      const camouflage = await AsyncStorage.getItem('@camouflage_enabled');
+      if (camouflage !== null) setIsCamouflageEnabled(camouflage === 'true');
     } catch (error) {
       console.error('Erro ao carregar configurações do usuário:', error);
     }
@@ -571,6 +575,33 @@ export default function Settings() {
               ))}
             </View>
           </View>
+        </Section>
+
+        <Section title="Modo Camuflado">
+          <SettingItem
+            icon="incognito"
+            title="Disfarçar como Bloco de Notas"
+            subtitle={isCamouflageEnabled ? 'Ativo — app abre como Notas' : 'Desativado'}
+            rightElement={
+              <Switch
+                value={isCamouflageEnabled}
+                onValueChange={async (value) => {
+                  setIsCamouflageEnabled(value);
+                  await AsyncStorage.setItem('@camouflage_enabled', String(value));
+                  if (value) {
+                    Alert.alert(
+                      'Modo Camuflado Ativado',
+                      'O app agora abre como um Bloco de Notas. Para acessar o ElaSegura, toque no título "Notas" 5 vezes seguidas.',
+                      [{ text: 'Entendido' }]
+                    );
+                  }
+                }}
+                trackColor={{ false: '#D1D1D1', true: colors.primary }}
+                thumbColor={'#FFF'}
+              />
+            }
+            isLast
+          />
         </Section>
 
         <Section title="Temas">
