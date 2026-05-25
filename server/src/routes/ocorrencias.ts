@@ -58,8 +58,21 @@ router.post('/', authenticateToken, async (req: any, res: Response) => {
 
 // List all Ocorrencias — community feed for the "Gerais" tab
 router.get('/', authenticateToken, async (req: any, res: Response) => {
+  const filter = req.query.filter as string | undefined;
+
   try {
-    const result = await query('SELECT * FROM "ocorrencia" WHERE user_id = $1 ORDER BY created_at DESC', [req.user.id]);
+    let result;
+    if (filter) {
+      result = await query(
+        `SELECT * FROM "ocorrencia" WHERE user_id = $1 AND (title ILIKE $2 OR description ILIKE $2) ORDER BY created_at DESC`,
+        [req.user.id, `%${filter}%`]
+      );
+    } else {
+      result = await query(
+        `SELECT * FROM "ocorrencia" WHERE user_id = $1 ORDER BY created_at DESC`, 
+        [req.user.id]
+      );
+    }
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching ocorrencias:', error);
@@ -72,6 +85,7 @@ router.get('/proximas', authenticateToken, async (req: any, res: Response) => {
   const lat = Number(req.query.lat);
   const lng = Number(req.query.lng);
   const radius = req.query.radius !== undefined ? Number(req.query.radius) : 1000;
+  const filter = req.query.filter as string | undefined;
 
   if (!isValidLatitude(lat) || !isValidLongitude(lng)) {
     return res.status(400).json({ error: 'Valid lat and lng query params are required' });
@@ -81,8 +95,8 @@ router.get('/proximas', authenticateToken, async (req: any, res: Response) => {
   }
 
   try {
-    const result = await query(
-      `SELECT * FROM (
+    let queryString = `
+       SELECT * FROM (
          SELECT *, (
            6371000 * acos(
              LEAST(1.0,
@@ -96,9 +110,17 @@ router.get('/proximas', authenticateToken, async (req: any, res: Response) => {
          WHERE latitude IS NOT NULL AND longitude IS NOT NULL
        ) sub
        WHERE distance <= $3
-       ORDER BY distance ASC`,
-      [lat, lng, radius]
-    );
+    `;
+    const params: any[] = [lat, lng, radius];
+
+    if (filter) {
+      queryString += ` AND (title ILIKE $4 OR description ILIKE $4)`;
+      params.push(`%${filter}%`);
+    }
+
+    queryString += ` ORDER BY distance ASC`;
+
+    const result = await query(queryString, params);
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching nearby ocorrencias:', error);
