@@ -343,7 +343,7 @@ const Home = () => {
                 style={styles.closeButton}
                 onPress={() => setModalVisible(false)}
               >
-                <MaterialIcons name="close" size={28} color={colors.text} />
+                <MaterialIcons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
 

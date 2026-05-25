@@ -58,7 +58,7 @@ export default function About() {
           activeOpacity={0.7}
           onPress={() => router.back()}
         >
-          <MaterialCommunityIcons name="chevron-left" size={32} color={colors.text} />
+          <MaterialCommunityIcons name="chevron-left" size={28} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.navbarTitle}>Sobre o App</Text>
         {/* View vazia apenas para centralizar o título perfeitamente */}

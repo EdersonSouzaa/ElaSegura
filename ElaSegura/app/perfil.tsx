@@ -91,7 +91,7 @@ export default function Perfil() {
             style={styles.backButton} 
             onPress={() => router.back()}
           >
-            <MaterialIcons name="arrow-back" size={24} color={colors.text} />
+            <MaterialIcons name="arrow-back" size={28} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Meu Perfil</Text>
           
@@ -151,7 +151,7 @@ export default function Perfil() {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.logoutButton} activeOpacity={0.7}>
-            <MaterialCommunityIcons name="logout" size={20} color={colors.primary} />
+            <MaterialCommunityIcons name="logout" size={24} color={colors.primary} />
             <Text style={styles.logoutText}>Sair da conta</Text>
           </TouchableOpacity>
         </View>

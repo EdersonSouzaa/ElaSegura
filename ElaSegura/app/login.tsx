@@ -201,7 +201,7 @@ export default function Login() {
             </Text>
 
             <View style={styles.modalInputContainer}>
-              <MaterialCommunityIcons name="lock-outline" size={20} color={colors.secondary} style={styles.inputIcon} />
+              <MaterialCommunityIcons name="lock-outline" size={24} color={colors.secondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.modalInput}
                 placeholder="Nova Senha"
@@ -212,15 +212,15 @@ export default function Login() {
               />
               <TouchableOpacity onPress={() => setShowNewPassword(!showNewPassword)}>
                 <MaterialCommunityIcons 
-                  name={showNewPassword ? "eye-off-outline" : "eye-outline"} 
-                  size={20} 
+                  name={showNewPassword ? "eye-off-outline" : "eye-outline"}
+                  size={24}
                   color={colors.secondary} 
                 />
               </TouchableOpacity>
             </View>
 
             <View style={styles.modalInputContainer}>
-              <MaterialCommunityIcons name="lock-check-outline" size={20} color={colors.secondary} style={styles.inputIcon} />
+              <MaterialCommunityIcons name="lock-check-outline" size={24} color={colors.secondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.modalInput}
                 placeholder="Confirmar Nova Senha"

@@ -102,13 +102,13 @@ const SOSScreen = () => {
             {!semContatos && contatosNotificados.map((c: any) => (
               <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', width: '100%', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
                 <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFEBEE', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
-                  <MaterialIcons name="person" size={22} color="#FF5252" />
+                  <MaterialIcons name="person" size={24} color="#FF5252" />
                 </View>
                 <View>
                   <Text style={{ fontWeight: 'bold', color: colors.text, fontSize: 15 }}>{c.name}</Text>
                   <Text style={{ color: colors.secondary, fontSize: 13 }}>{c.phone}</Text>
                 </View>
-                <MaterialIcons name="check-circle" size={20} color="#4CAF50" style={{ marginLeft: 'auto' }} />
+                <MaterialIcons name="check-circle" size={24} color="#4CAF50" style={{ marginLeft: 'auto' }} />
               </View>
             ))}
 
