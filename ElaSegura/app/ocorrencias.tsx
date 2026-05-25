@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Colors } from '../constants/theme';
@@ -193,7 +194,7 @@ const filteredOccurrences = useMemo(() => {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar
         barStyle={isDarkMode ? 'light-content' : 'dark-content'}
         backgroundColor={colors.background}
@@ -201,7 +202,7 @@ const filteredOccurrences = useMemo(() => {
 
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={24} color={colors.text} />
+          <MaterialIcons name="arrow-back" size={28} color={colors.text} />
         </TouchableOpacity>
 
         <View>
@@ -269,7 +270,7 @@ const filteredOccurrences = useMemo(() => {
           activeOpacity={0.8}
           onPress={() => setModalVisible(true)}
         >
-          <MaterialIcons name="add-alert" size={22} color="#FFF" />
+          <MaterialIcons name="add-alert" size={24} color="#FFF" />
           <Text style={styles.registerButtonText}>Nova ocorrencia</Text>
         </TouchableOpacity>
       </View>
@@ -343,7 +344,7 @@ const filteredOccurrences = useMemo(() => {
               </View>
 
               <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
-                <MaterialIcons name="close" size={26} color={colors.text} />
+                <MaterialIcons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
 
@@ -422,12 +423,12 @@ const filteredOccurrences = useMemo(() => {
               onPress={handleRegisterOccurrence}
               disabled={!canSave}
             >
-              <MaterialIcons name="check-circle" size={22} color="#FFF" />
+              <MaterialIcons name="check-circle" size={24} color="#FFF" />
               <Text style={styles.saveButtonText}>Salvar ocorrencia</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }

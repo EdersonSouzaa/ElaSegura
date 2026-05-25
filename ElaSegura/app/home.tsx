@@ -11,6 +11,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { getStyles } from '../styles/home.styles';
 import { useRouter } from 'expo-router';
@@ -18,11 +19,13 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
 import { Colors } from '../constants/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LeafletMap, type MarkedZone } from '../components/LeafletMap';
+import { useLocation } from '../hooks/use-location';
+import { loadMarkedZones } from '../hooks/use-marked-zones';
 import { api } from '../services/api';
 import * as Location from 'expo-location';
 import Constants from 'expo-constants';
 
-const MAPA_IMAGE = require('../assets/images/mapa.png');
 const Contatos_image = require('../assets/images/contatos.png');
 const Alerta_image = require('../assets/images/alerta.png');
 const Areas_image = require('../assets/images/areas.png');
@@ -37,6 +40,8 @@ const Home = () => {
   const [userName, setUserName] = useState('');
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [occurrences, setOccurrences] = useState<any[]>([]);
+  const [markedZones, setMarkedZones] = useState<MarkedZone[]>([]);
+  const { coords } = useLocation();
 
   const colors = Colors[theme];
   const styles = useMemo(() => getStyles(isDarkMode, colors), [isDarkMode, colors]);
@@ -83,6 +88,7 @@ const Home = () => {
     }
   }, []);
 
+<<<<<<< HEAD
   const formatAlertTime = (iso: string) => {
     if (!iso) return '';
     const d = new Date(iso);
@@ -90,6 +96,12 @@ const Home = () => {
     const time = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     return `${day}, ${time}`;
   };
+=======
+  // Áreas marcadas no mapa (feat #71) — exibidas também no preview da home
+  const loadMarked = useCallback(async () => {
+    setMarkedZones(await loadMarkedZones());
+  }, []);
+>>>>>>> 825f13121a140c02c90bd695a3f4b1dbd851285a
 
   // --- EFEITO DE FOCO (Unificado em um único hook) ---
 
@@ -97,12 +109,18 @@ const Home = () => {
     useCallback(() => {
       loadUserData();
       loadLocationPreference();
+<<<<<<< HEAD
       loadAlerts();
     }, [loadUserData, loadLocationPreference, loadAlerts])
+=======
+      loadOccurrences();
+      loadMarked();
+    }, [loadUserData, loadLocationPreference, loadOccurrences, loadMarked])
+>>>>>>> 825f13121a140c02c90bd695a3f4b1dbd851285a
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={isDarkMode ? colors.cardBackground : "#FFF"} />
 
       <ScrollView
@@ -132,7 +150,7 @@ const Home = () => {
         </View>
 
         <View style={styles.content}>
-          {/* Mapa */}
+          {/* Mapa em tempo real (preview) */}
           <TouchableOpacity
             activeOpacity={0.9}
             style={styles.mapCard}
@@ -144,11 +162,19 @@ const Home = () => {
               }
             }}
           >
-            <Image
-              source={MAPA_IMAGE}
-              style={styles.mapImage}
-              resizeMode="cover"
+            <LeafletMap
+              userCoords={coords}
+              riskZones={[]}
+              incidents={[]}
+              showIncidents={false}
+              markedZones={markedZones}
+              isDarkMode={isDarkMode}
+              interactive={false}
             />
+            <View style={styles.mapCardBadge}>
+              <MaterialCommunityIcons name="map-outline" size={14} color="#fff" />
+              <Text style={styles.mapCardBadgeText}>Ver mapa em tempo real</Text>
+            </View>
           </TouchableOpacity>
 
           {/* Acesso rápido */}
@@ -335,7 +361,7 @@ const Home = () => {
                 style={styles.closeButton}
                 onPress={() => setModalVisible(false)}
               >
-                <MaterialIcons name="close" size={28} color={colors.text} />
+                <MaterialIcons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
 
@@ -365,7 +391,7 @@ const Home = () => {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 

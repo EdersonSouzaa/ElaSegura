@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  SafeAreaView,
   StyleSheet,
   StatusBar,
   ScrollView,
@@ -14,6 +13,7 @@ import {
   Modal,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
@@ -321,7 +321,7 @@ export default function Settings() {
   // Se o usuário selecionou a sub-tela de Segurança
   if (currentSubScreen === 'security') {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'left', 'right']}>
         <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={colors.headerBg} />
 
         {/* Cabeçalho da sub-tela de Segurança */}
@@ -330,7 +330,7 @@ export default function Settings() {
             style={[styles.backButton, { backgroundColor: colors.backBtnBg }]}
             onPress={() => setCurrentSubScreen('main')}
           >
-            <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
+            <MaterialCommunityIcons name="arrow-left" size={28} color={colors.text} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Segurança</Text>
         </View>
@@ -447,7 +447,7 @@ export default function Settings() {
                     <View style={[styles.contactIconBox, { backgroundColor: colors.iconBox }]}>
                       <MaterialCommunityIcons
                         name={item.emergencial ? "shield-alert" : "account"}
-                        size={22}
+                        size={24}
                         color={item.emergencial ? colors.primary : colors.subtitle}
                       />
                     </View>
@@ -474,7 +474,7 @@ export default function Settings() {
 
   // Tela Principal de Configurações
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'left', 'right']}>
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={colors.headerBg} />
 
       <View style={[styles.header, { backgroundColor: colors.headerBg }]}>
@@ -482,7 +482,7 @@ export default function Settings() {
           style={[styles.backButton, { backgroundColor: colors.backBtnBg }]}
           onPress={() => router.back()}
         >
-          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
+          <MaterialCommunityIcons name="arrow-left" size={28} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Configurações</Text>
       </View>
@@ -633,7 +633,7 @@ export default function Settings() {
           activeOpacity={0.8}
           onPress={() => router.replace('/login')}
         >
-          <MaterialCommunityIcons name="logout" size={22} color={colors.primary} />
+          <MaterialCommunityIcons name="logout" size={24} color={colors.primary} />
           <Text style={[styles.logoutText, { color: colors.primary }]}>Sair da Conta</Text>
         </TouchableOpacity>
 

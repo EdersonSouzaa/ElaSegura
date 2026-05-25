@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
   StyleSheet,
   StatusBar,
   KeyboardAvoidingView,
@@ -12,6 +11,7 @@ import {
   Modal,
   Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { api } from '../services/api';
@@ -103,7 +103,7 @@ export default function Login() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={colors.background} />
       
       <SuccessPopup 
@@ -201,7 +201,7 @@ export default function Login() {
             </Text>
 
             <View style={styles.modalInputContainer}>
-              <MaterialCommunityIcons name="lock-outline" size={20} color={colors.secondary} style={styles.inputIcon} />
+              <MaterialCommunityIcons name="lock-outline" size={24} color={colors.secondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.modalInput}
                 placeholder="Nova Senha"
@@ -212,15 +212,15 @@ export default function Login() {
               />
               <TouchableOpacity onPress={() => setShowNewPassword(!showNewPassword)}>
                 <MaterialCommunityIcons 
-                  name={showNewPassword ? "eye-off-outline" : "eye-outline"} 
-                  size={20} 
+                  name={showNewPassword ? "eye-off-outline" : "eye-outline"}
+                  size={24}
                   color={colors.secondary} 
                 />
               </TouchableOpacity>
             </View>
 
             <View style={styles.modalInputContainer}>
-              <MaterialCommunityIcons name="lock-check-outline" size={20} color={colors.secondary} style={styles.inputIcon} />
+              <MaterialCommunityIcons name="lock-check-outline" size={24} color={colors.secondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.modalInput}
                 placeholder="Confirmar Nova Senha"
