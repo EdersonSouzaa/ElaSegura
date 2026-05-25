@@ -50,6 +50,7 @@ export default function Ocorrencias() {
   const [description, setDescription] = useState('');
   const [type, setType] = useState<OccurrenceType>('error');
   const [distance, setDistance] = useState<number>(500);
+  const [categoryFilter, setCategoryFilter] = useState('Todos');
 
   useEffect(() => {
     const loadData = async () => {
@@ -88,15 +89,28 @@ export default function Ocorrencias() {
 
   const canSave = title.trim().length > 0 && description.trim().length > 0;
 
-  const filteredOccurrences = useMemo(() => {
-    if (activeTab === 'gerais') {
-      return occurrences;
+const filteredOccurrences = useMemo(() => {
+    let result = [...occurrences];
+
+    if (activeTab === 'proximas') {
+      result = result
+        .filter((item) => item.distance === radiusFilter)
+        .sort((a, b) => a.distance - b.distance);
     }
 
-    return [...occurrences]
-      .filter((item) => item.distance === radiusFilter)
-      .sort((a, b) => a.distance - b.distance);
-  }, [activeTab, occurrences, radiusFilter]);
+    if (activeTab === 'gerais' && categoryFilter !== 'Todos') {
+      const normalize = (str: string) => 
+        str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      
+      const termo = normalize(categoryFilter);
+      
+      result = result.filter((item) => {
+        return normalize(item.title).includes(termo) || normalize(item.desc).includes(termo);
+      });
+    }
+
+    return result;
+  }, [activeTab, occurrences, radiusFilter, categoryFilter]);
 
   const resetForm = () => {
     setTitle('');
@@ -137,7 +151,8 @@ export default function Ocorrencias() {
     const updatedOccurrences = [newOccurrence, ...occurrences];
     setOccurrences(updatedOccurrences);
     saveOccurrences(updatedOccurrences);
-    
+
+    setCategoryFilter('Todos');
     setActiveTab('gerais');
     closeModal();
   };
@@ -205,6 +220,25 @@ export default function Ocorrencias() {
         </View>
       )}
 
+      {activeTab === 'gerais' && (
+        <View style={styles.filterContainer}>
+          <Text style={styles.filterLabel}>Categoria</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
+            {['Todos', 'Assédio', 'Roubo', 'Suspeita'].map((cat) => (
+              <TouchableOpacity
+                key={cat}
+                style={[styles.filterChip, categoryFilter === cat && styles.activeFilterChip]}
+                onPress={() => setCategoryFilter(cat)}
+              >
+                <Text style={[styles.filterChipText, categoryFilter === cat && styles.activeFilterChipText]}>
+                  {cat}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
       <View style={styles.actionContainer}>
         <TouchableOpacity
           style={styles.registerButton}
@@ -264,9 +298,9 @@ export default function Ocorrencias() {
                 color={colors.primary}
               />
             </View>
-            <Text style={styles.emptyTitle}>Tudo tranquilo por aqui!</Text>
+            <Text style={styles.emptyTitle}>Nenhuma ocorrência encontrada</Text>
             <Text style={styles.emptyText}>
-              Nao ha ocorrencias registradas no momento.
+              Nenhum alerta bate com o seu filtro atual.
             </Text>
           </View>
         )}
