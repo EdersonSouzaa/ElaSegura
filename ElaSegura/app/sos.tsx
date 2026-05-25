@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, StatusBar, Modal, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView, StatusBar, Modal, Linking, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import * as Location from 'expo-location';
 import { getStyles } from '../styles/sos.styles';
 import { useTheme } from '../context/ThemeContext';
 import { Colors } from '../constants/theme';
@@ -14,25 +15,81 @@ const SOSScreen = () => {
   const colors = Colors[theme];
   const styles = useMemo(() => getStyles(isDarkMode, colors), [isDarkMode, colors]);
 
+  const [isLoading, setIsLoading] = useState(false);
   const [resultModalVisible, setResultModalVisible] = useState(false);
   const [contatosNotificados, setContatosNotificados] = useState<any[]>([]);
   const [semContatos, setSemContatos] = useState(false);
+  const [currentCoords, setCurrentCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+
+  const formatPhoneForWhatsApp = (phone: string): string => {
+    const cleaned = phone.replace(/\D/g, '');
+    if (cleaned.length === 10 || cleaned.length === 11) {
+      return `55${cleaned}`;
+    }
+    return cleaned;
+  };
+
+  const openWhatsApp = async (contact: any) => {
+    let message: string;
+    if (currentCoords) {
+      const mapsUrl = `https://maps.google.com/?q=${currentCoords.latitude},${currentCoords.longitude}`;
+      message = `🚨 SOCORRO! Preciso de ajuda urgente!\n\n📍 Minha localização agora:\n${mapsUrl}\n\nPor favor, me ligue imediatamente!\n— Enviado pelo ElaSegura`;
+    } else {
+      message = `🚨 SOCORRO! Preciso de ajuda urgente!\n\nPor favor, me ligue imediatamente!\n— Enviado pelo ElaSegura`;
+    }
+
+    const phone = formatPhoneForWhatsApp(contact.phone);
+    const url = `whatsapp://send?phone=${phone}&text=${encodeURIComponent(message)}`;
+    const canOpen = await Linking.canOpenURL(url);
+
+    if (canOpen) {
+      await Linking.openURL(url);
+    } else {
+      Alert.alert(
+        'WhatsApp não encontrado',
+        `Não foi possível abrir o WhatsApp. Contate ${contact.name} pelo número ${contact.phone}.`
+      );
+    }
+  };
 
   const triggerSOSAlert = async () => {
+    setIsLoading(true);
     try {
+      let coords = null;
+      let locationString = 'Localização não disponível';
+
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const lastKnown = await Location.getLastKnownPositionAsync({});
+        let locCoords = lastKnown ? lastKnown.coords : null;
+
+        if (!locCoords) {
+          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          locCoords = loc.coords;
+        }
+
+        if (locCoords) {
+          coords = { latitude: locCoords.latitude, longitude: locCoords.longitude };
+          locationString = `${coords.latitude.toFixed(6)},${coords.longitude.toFixed(6)}`;
+          setCurrentCoords(coords);
+        }
+      }
+
       const token = await AsyncStorage.getItem('userToken');
       if (!token) return;
 
-      const response = await api.post('/sos', { location: 'Localização detectada' }, token);
+      const response = await api.post('/sos', { location: locationString }, token);
       const contatos = response.contatosEmergencia;
 
       setContatosNotificados(contatos);
       setSemContatos(contatos.length === 0);
       setResultModalVisible(true);
-    } catch (error: any) {
+    } catch {
       setContatosNotificados([]);
       setSemContatos(true);
       setResultModalVisible(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -41,7 +98,6 @@ const SOSScreen = () => {
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={colors.background} />
       <View style={styles.container}>
 
-        {/* Ícone */}
         <View style={styles.iconWrapper}>
           <View style={styles.iconGlow} />
           <View style={styles.iconInnerGlow} />
@@ -52,26 +108,42 @@ const SOSScreen = () => {
 
         <Text style={styles.title}>Enviar Alerta SOS?</Text>
         <Text style={styles.description}>
-          Seus contatos emergenciais serão notificados com sua localização.
+          Seus contatos emergenciais serão notificados via WhatsApp com sua localização em tempo real.
         </Text>
 
         <View style={styles.locationContainer}>
           <MaterialIcons name="location-on" size={18} color={colors.secondary} />
-          <Text style={styles.locationText}>Localização detectada</Text>
+          <Text style={styles.locationText}>
+            {isLoading ? 'Obtendo localização GPS...' : 'Localização GPS será capturada ao enviar'}
+          </Text>
         </View>
 
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.sendButton} activeOpacity={0.8} onPress={triggerSOSAlert}>
-            <MaterialCommunityIcons name="shield-alert" size={24} color="#FFFFFF" />
-            <Text style={styles.sendButtonText}>Enviar Alerta Agora</Text>
+          <TouchableOpacity
+            style={[styles.sendButton, isLoading && { opacity: 0.7 }]}
+            activeOpacity={0.8}
+            onPress={triggerSOSAlert}
+            disabled={isLoading}
+          >
+            {isLoading
+              ? <ActivityIndicator color="#FFFFFF" size="small" />
+              : <MaterialCommunityIcons name="shield-alert" size={24} color="#FFFFFF" />
+            }
+            <Text style={styles.sendButtonText}>
+              {isLoading ? 'Enviando...' : 'Enviar Alerta Agora'}
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.cancelButton} activeOpacity={0.7} onPress={() => router.back()}>
+          <TouchableOpacity
+            style={[styles.cancelButton, isLoading && { opacity: 0.5 }]}
+            activeOpacity={0.7}
+            onPress={() => router.back()}
+            disabled={isLoading}
+          >
             <Text style={styles.cancelButtonText}>Cancelar</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Modal de resultado */}
       <Modal
         visible={resultModalVisible}
         transparent={true}
@@ -79,43 +151,60 @@ const SOSScreen = () => {
         onRequestClose={() => setResultModalVisible(false)}
       >
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-          <View style={{ backgroundColor: colors.cardBackground, borderRadius: 24, padding: 28, width: '100%', alignItems: 'center' }}>
-            
-            {/* Ícone */}
+          <View style={{ backgroundColor: colors.cardBackground, borderRadius: 24, padding: 28, width: '100%', alignItems: 'center', maxHeight: '85%' }}>
+
             <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: semContatos ? '#FFF3E0' : '#FFEBEE', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
               <MaterialCommunityIcons name={semContatos ? 'alert-circle' : 'shield-check'} size={44} color={semContatos ? '#FF9800' : '#FF5252'} />
             </View>
 
             <Text style={{ fontSize: 22, fontWeight: 'bold', color: colors.text, marginBottom: 8, textAlign: 'center' }}>
-              {semContatos ? '⚠️ Nenhum contato emergencial' : '🚨 SOS Enviado!'}
+              {semContatos ? 'Nenhum contato emergencial' : 'SOS Registrado!'}
             </Text>
 
-            <Text style={{ fontSize: 14, color: colors.secondary, textAlign: 'center', marginBottom: 20 }}>
-              {semContatos 
+            <Text style={{ fontSize: 14, color: colors.secondary, textAlign: 'center', marginBottom: 16 }}>
+              {semContatos
                 ? 'Você não possui contatos emergenciais cadastrados. Adicione contatos e marque-os como emergenciais.'
-                : 'Os seguintes contatos foram notificados:'
+                : currentCoords
+                  ? 'Toque em cada contato para enviar sua localização via WhatsApp:'
+                  : 'Localização não obtida. Toque em cada contato para notificar via WhatsApp:'
               }
             </Text>
 
-            {/* Lista de contatos notificados */}
-            {!semContatos && contatosNotificados.map((c: any) => (
-              <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', width: '100%', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFEBEE', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
-                  <MaterialIcons name="person" size={22} color="#FF5252" />
-                </View>
-                <View>
-                  <Text style={{ fontWeight: 'bold', color: colors.text, fontSize: 15 }}>{c.name}</Text>
-                  <Text style={{ color: colors.secondary, fontSize: 13 }}>{c.phone}</Text>
-                </View>
-                <MaterialIcons name="check-circle" size={20} color="#4CAF50" style={{ marginLeft: 'auto' }} />
+            {currentCoords && !semContatos && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: isDarkMode ? '#1A2A1A' : '#E8F5E9', borderRadius: 10, padding: 10, marginBottom: 16, width: '100%' }}>
+                <MaterialIcons name="location-on" size={16} color="#4CAF50" />
+                <Text style={{ color: '#4CAF50', fontSize: 12, marginLeft: 6 }}>
+                  GPS capturado: {currentCoords.latitude.toFixed(5)}, {currentCoords.longitude.toFixed(5)}
+                </Text>
               </View>
-            ))}
+            )}
+
+            <ScrollView style={{ width: '100%' }} showsVerticalScrollIndicator={false}>
+              {!semContatos && contatosNotificados.map((c: any) => (
+                <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', width: '100%', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                  <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFEBEE', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
+                    <MaterialIcons name="person" size={22} color="#FF5252" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontWeight: 'bold', color: colors.text, fontSize: 15 }}>{c.name}</Text>
+                    <Text style={{ color: colors.secondary, fontSize: 13 }}>{c.phone}</Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => openWhatsApp(c)}
+                    style={{ backgroundColor: '#25D366', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, flexDirection: 'row', alignItems: 'center' }}
+                  >
+                    <MaterialCommunityIcons name="whatsapp" size={18} color="#fff" />
+                    <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 13, marginLeft: 4 }}>Notificar</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
 
             <TouchableOpacity
               style={{ marginTop: 24, backgroundColor: colors.primary, borderRadius: 16, paddingVertical: 14, width: '100%', alignItems: 'center' }}
               onPress={() => setResultModalVisible(false)}
             >
-              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>OK</Text>
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Fechar</Text>
             </TouchableOpacity>
 
           </View>
