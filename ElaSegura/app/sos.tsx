@@ -1,10 +1,5 @@
 import React, { useMemo, useState } from 'react';
-<<<<<<< HEAD
-import { View, Text, TouchableOpacity, SafeAreaView, StatusBar, Modal, Linking, Alert, ActivityIndicator, ScrollView } from 'react-native';
-=======
-import { View, Text, TouchableOpacity, StatusBar, Modal, FlatList } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
->>>>>>> 825f13121a140c02c90bd695a3f4b1dbd851285a
+import { View, Text, TouchableOpacity, SafeAreaView, StatusBar, Modal, Linking, Alert, ActivityIndicator, ScrollView, Platform } from 'react-native';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
@@ -63,20 +58,35 @@ const SOSScreen = () => {
       let coords = null;
       let locationString = 'Localização não disponível';
 
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === 'granted') {
-        const lastKnown = await Location.getLastKnownPositionAsync({});
-        let locCoords = lastKnown ? lastKnown.coords : null;
+      if (Platform.OS === 'web') {
+        await new Promise<void>((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              coords = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+              locationString = `${position.coords.latitude.toFixed(6)},${position.coords.longitude.toFixed(6)}`;
+              setCurrentCoords(coords);
+              resolve();
+            },
+            () => resolve(),
+            { timeout: 5000 }
+          );
+        });
+      } else {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const lastKnown = await Location.getLastKnownPositionAsync({});
+          let locCoords = lastKnown ? lastKnown.coords : null;
 
-        if (!locCoords) {
-          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-          locCoords = loc.coords;
-        }
+          if (!locCoords) {
+            const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+            locCoords = loc.coords;
+          }
 
-        if (locCoords) {
-          coords = { latitude: locCoords.latitude, longitude: locCoords.longitude };
-          locationString = `${coords.latitude.toFixed(6)},${coords.longitude.toFixed(6)}`;
-          setCurrentCoords(coords);
+          if (locCoords) {
+            coords = { latitude: locCoords.latitude, longitude: locCoords.longitude };
+            locationString = `${locCoords.latitude.toFixed(6)},${locCoords.longitude.toFixed(6)}`;
+            setCurrentCoords(coords);
+          }
         }
       }
 
@@ -99,7 +109,7 @@ const SOSScreen = () => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={colors.background} />
       <View style={styles.container}>
 
@@ -175,26 +185,12 @@ const SOSScreen = () => {
               }
             </Text>
 
-<<<<<<< HEAD
             {currentCoords && !semContatos && (
               <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: isDarkMode ? '#1A2A1A' : '#E8F5E9', borderRadius: 10, padding: 10, marginBottom: 16, width: '100%' }}>
                 <MaterialIcons name="location-on" size={16} color="#4CAF50" />
                 <Text style={{ color: '#4CAF50', fontSize: 12, marginLeft: 6 }}>
                   GPS capturado: {currentCoords.latitude.toFixed(5)}, {currentCoords.longitude.toFixed(5)}
                 </Text>
-=======
-            {/* Lista de contatos notificados */}
-            {!semContatos && contatosNotificados.map((c: any) => (
-              <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', width: '100%', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFEBEE', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
-                  <MaterialIcons name="person" size={24} color="#FF5252" />
-                </View>
-                <View>
-                  <Text style={{ fontWeight: 'bold', color: colors.text, fontSize: 15 }}>{c.name}</Text>
-                  <Text style={{ color: colors.secondary, fontSize: 13 }}>{c.phone}</Text>
-                </View>
-                <MaterialIcons name="check-circle" size={24} color="#4CAF50" style={{ marginLeft: 'auto' }} />
->>>>>>> 825f13121a140c02c90bd695a3f4b1dbd851285a
               </View>
             )}
 
