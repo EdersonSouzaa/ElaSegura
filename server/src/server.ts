@@ -7,6 +7,7 @@ import alertasRoutes from './routes/alertas.js';
 import ocorrenciaRoutes from './routes/ocorrencias.js';
 import contatoRoutes from './routes/contatos.js';
 import sosRoutes from './routes/sos.js';
+import compartilhamentoRoutes from './routes/compartilhamento.js';
 import userRoutes from './routes/user.js';
 
 dotenv.config();
@@ -23,6 +24,7 @@ app.use('/alertas', alertasRoutes);
 app.use('/ocorrencias', ocorrenciaRoutes);
 app.use('/contatos', contatoRoutes);
 app.use('/sos', sosRoutes);
+app.use('/compartilhamento', compartilhamentoRoutes);
 app.use('/user', userRoutes);
 
 // Health check

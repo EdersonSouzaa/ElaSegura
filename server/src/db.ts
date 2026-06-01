@@ -92,6 +92,18 @@ export const initDb = async () => {
       );
     `);
 
+    // Create Compartilhamento table (location shares sent to emergency contacts - refs #82)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "compartilhamento" (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES "user"(id) ON DELETE CASCADE,
+        latitude DOUBLE PRECISION,
+        longitude DOUBLE PRECISION,
+        location VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     const defaultUsers = [
       { name: 'Maria Silva (Teste)', email: 'maria@teste.com', password: 'senha_segura_123' },
       { name: 'Ana Costa (Teste)', email: 'ana@teste.com', password: 'senha_segura_123' },

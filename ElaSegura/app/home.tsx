@@ -192,6 +192,13 @@ const Home = () => {
               label="Áreas de risco"
               onPress={() => router.push('/mapa' as any)}
             />
+
+            <QuickAccessCard
+              styles={styles}
+              icon={<MaterialCommunityIcons name="map-marker-radius" size={28} color={colors.primary} />}
+              label="Compartilhar local"
+              onPress={() => router.push('/compartilhar' as any)}
+            />
           </View>
 
           {/* Botão SOS */}
