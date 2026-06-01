@@ -8,6 +8,7 @@ import { useTheme } from '../context/ThemeContext';
 import { Colors } from '../constants/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../services/api';
+import { EmergencyCallSheet } from '../components/EmergencyCallSheet';
 
 const SOSScreen = () => {
   const router = useRouter();
@@ -18,6 +19,7 @@ const SOSScreen = () => {
   const [resultModalVisible, setResultModalVisible] = useState(false);
   const [contatosNotificados, setContatosNotificados] = useState<any[]>([]);
   const [semContatos, setSemContatos] = useState(false);
+  const [emergencyVisible, setEmergencyVisible] = useState(false);
 
   const triggerSOSAlert = async () => {
     try {
@@ -65,6 +67,14 @@ const SOSScreen = () => {
           <TouchableOpacity style={styles.sendButton} activeOpacity={0.8} onPress={triggerSOSAlert}>
             <MaterialCommunityIcons name="shield-alert" size={24} color="#FFFFFF" />
             <Text style={styles.sendButtonText}>Enviar Alerta Agora</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#9C27B0', borderRadius: 16, paddingVertical: 14, marginTop: 12 }}
+            activeOpacity={0.85}
+            onPress={() => setEmergencyVisible(true)}
+          >
+            <MaterialCommunityIcons name="phone-alert" size={22} color="#FFFFFF" />
+            <Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 16, marginLeft: 8 }}>Ligar para emergência</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.cancelButton} activeOpacity={0.7} onPress={() => router.back()}>
             <Text style={styles.cancelButtonText}>Cancelar</Text>
@@ -122,6 +132,8 @@ const SOSScreen = () => {
           </View>
         </View>
       </Modal>
+
+      <EmergencyCallSheet visible={emergencyVisible} onClose={() => setEmergencyVisible(false)} />
     </SafeAreaView>
   );
 };

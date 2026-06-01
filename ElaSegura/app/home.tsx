@@ -25,6 +25,7 @@ import { loadMarkedZones } from '../hooks/use-marked-zones';
 import { api } from '../services/api';
 import * as Location from 'expo-location';
 import Constants from 'expo-constants';
+import { EmergencyCallSheet } from '../components/EmergencyCallSheet';
 
 const Contatos_image = require('../assets/images/contatos.png');
 const Alerta_image = require('../assets/images/alerta.png');
@@ -41,6 +42,7 @@ const Home = () => {
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [occurrences, setOccurrences] = useState<any[]>([]);
   const [markedZones, setMarkedZones] = useState<MarkedZone[]>([]);
+  const [emergencyVisible, setEmergencyVisible] = useState(false);
   const { coords } = useLocation();
 
   const colors = Colors[theme];
@@ -198,6 +200,13 @@ const Home = () => {
               icon={<MaterialCommunityIcons name="map-marker-radius" size={28} color={colors.primary} />}
               label="Compartilhar local"
               onPress={() => router.push('/compartilhar' as any)}
+            />
+
+            <QuickAccessCard
+              styles={styles}
+              icon={<MaterialCommunityIcons name="phone-alert" size={28} color={colors.primary} />}
+              label="Ligar para ajuda"
+              onPress={() => setEmergencyVisible(true)}
             />
           </View>
 
@@ -376,6 +385,8 @@ const Home = () => {
           </View>
         </View>
       </Modal>
+
+      <EmergencyCallSheet visible={emergencyVisible} onClose={() => setEmergencyVisible(false)} />
     </SafeAreaView>
   );
 };
