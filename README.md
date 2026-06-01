@@ -53,12 +53,13 @@ Open another terminal in the `ElaSegura` folder:
 ---
 
 ## 🛠️ Implemented Features
-- ✅ User registration with validation.
-- ✅ Login with JWT authentication.
-- ✅ Password recovery (Reset Password).
-- ✅ Visual error feedback (red error messages).
-- ✅ Premium success popup with blur effect (BlurView).
-- ✅ Database structure for Occurrences, Contacts, and SOS.
+- ✅ **Secure Authentication:** User registration with input validation, JWT-based login, and password recovery.
+- ✅ **Panic Button (SOS):** Instant geolocated alert dispatch to trusted contacts in emergency situations.
+- ✅ **Emergency Contacts:** Dedicated manager to add and edit trusted contacts.
+- ✅ **Interactive Safety Map:** Real-time collaborative mapping of occurrences and hazard zones.
+- ✅ **Incident Notebook:** Built-in notepad to record and manage safety-related notes or evidence.
+- ✅ **Customization:** Light and dark theme modes supported through a dedicated Theme Context.
+- ✅ **Premium UI/UX:** Blur success popups (`BlurView`), dynamic form validation feedback, and clean layouts optimized for high stress.
 
 ## 📌 Golden Rule
 For the mobile app to connect to the backend running on your computer:
