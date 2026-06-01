@@ -1,6 +1,6 @@
 # ElaSegura - Execution Guide
 
-This project consists of a mobile application (Frontend) and an API server (Backend) with a local PostgreSQL database.
+ElaSegura is a collaborative safety mobile application designed to protect women by offering a real-time SOS alert system for trusted contacts and a crowd-sourced mapping tool to flag high-risk areas in the community. It consists of a React Native mobile application (Frontend) and an Express API server (Backend) powered by a local PostgreSQL database.
 
 ## 🚀 How to Run the Project
 
