@@ -1,68 +1,66 @@
-# ElaSegura - Guia de Execução
+# ElaSegura - Execution Guide
 
-Este projeto consiste em um aplicativo mobile (Frontend) e um servidor de API (Backend) com banco de dados PostgreSQL rodando localmente.
+This project consists of a mobile application (Frontend) and an API server (Backend) with a local PostgreSQL database.
 
-## 🚀 Como Executar o Projeto
+## 🚀 How to Run the Project
 
-### 1. Pré-requisitos
-- **Node.js** instalado (versão 18 ou superior).
-- **PostgreSQL** instalado e rodando no seu computador.
-- **Banco de Dados:** Você deve criar um banco chamado `elasegura` manualmente (via pgAdmin ou psql).
+### 1. Prerequisites
+- **Node.js** installed (version 18 or higher).
+- **PostgreSQL** installed and running on your computer.
+- **Database:** You must manually create a database named `elasegura` (via pgAdmin or psql).
 
 ---
 
-### 2. Configuração do Backend (API)
-Abra um terminal na pasta `server`:
+### 2. Backend Configuration (API)
+Open a terminal in the `server` folder:
 
-1. **Instalar dependências:**
+1. **Install dependencies:**
    ```bash
    npm install
    ```
 
-2. **Configurar Variáveis de Ambiente:**
-   - Renomeie o arquivo `.env.example` para `.env`.
-   - Abra o `.env` e substitua `USUARIO` e `SENHA` pelas suas credenciais do PostgreSQL.
-   - Certifique-se de que o nome do banco é `elasegura`.
+2. **Configure Environment Variables:**
+   - Rename the `.env.example` file to `.env`.
+   - Open `.env` and replace the credentials with your PostgreSQL username and password.
+   - Make sure the database name is `elasegura`.
 
-3. **Iniciar o servidor:**
+3. **Start the server:**
    ```bash
    npm run dev
    ```
-   *O servidor estará rodando em http://localhost:3000. As tabelas serão criadas automaticamente no primeiro acesso.*
+   *The server will run on http://localhost:3000. Database tables will be automatically created on first access.*
 
 ---
 
-### 3. Configuração do Frontend (App)
-Abra outro terminal na pasta `ElaSegura`:
+### 3. Frontend Configuration (App)
+Open another terminal in the `ElaSegura` folder:
 
-1. **Instalar dependências:**
+1. **Install dependencies:**
    ```bash
    npm install
    ```
 
-2. **Configurar o IP da Máquina:**
-   - No celular, o `localhost` não funciona. Você deve usar o IP do seu computador.
-   - Abra o arquivo `services/api.ts`.
-   - Atualize a constante `API_URL` com o seu IP atual (ex: `http://192.168.x.x:3000`).
-   - *Dica: Use o comando `ipconfig` no terminal para descobrir seu endereço IPv4.*
+2. **IP and Port Configuration (Automatic):**
+   - The application has been updated to dynamically detect your computer's IP (via Metro Bundler) and the port configured in the backend (`server/.env`). It is not necessary to edit any files or create a `.env` file in the app folder.
 
-3. **Iniciar o App:**
+3. **Start the App:**
    ```bash
-   npx expo start
+   npm start
    ```
-   *Escaneie o QR Code com o app Expo Go no seu celular Android ou a Câmera no iOS.*
+   *or `npx expo start`*
+   *Scan the QR Code with the Expo Go app on your Android device or the native Camera app on iOS.*
 
 ---
 
-## 🛠️ Funcionalidades Implementadas
-- ✅ Cadastro de usuários com validação.
-- ✅ Login com autenticação JWT.
-- ✅ Recuperação de senha (Reset Password).
-- ✅ Feedback visual de erros (mensagens em vermelho).
-- ✅ Popup de sucesso premium com desfoque (BlurView).
-- ✅ Estrutura de tabelas para Ocorrências, Contatos e SOS.
+## 🛠️ Implemented Features
+- ✅ User registration with validation.
+- ✅ Login with JWT authentication.
+- ✅ Password recovery (Reset Password).
+- ✅ Visual error feedback (red error messages).
+- ✅ Premium success popup with blur effect (BlurView).
+- ✅ Database structure for Occurrences, Contacts, and SOS.
 
-## 📌 Regra de Ouro
-Para que o aplicativo no celular consiga se conectar ao backend no computador:
-1. Ambos **DEVEM** estar conectados na **mesma rede Wi-Fi**.
-2. O **Firewall do Windows** deve permitir conexões na porta `3000`.
+## 📌 Golden Rule
+For the mobile app to connect to the backend running on your computer:
+1. Both devices **MUST** be connected to the **same Wi-Fi network**.
+2. **Windows Firewall** (or equivalent) must allow incoming connections on port `3000`.
