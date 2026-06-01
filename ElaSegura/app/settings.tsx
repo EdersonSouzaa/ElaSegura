@@ -32,9 +32,13 @@ export default function Settings() {
   // Preferências do usuário
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(true);
   const [isLocationEnabled, setIsLocationEnabled] = useState(false);
+  const [alertRadius, setAlertRadius] = useState(5000);
 
   // Biometria local
   const [isBiometryEnabled, setIsBiometryEnabled] = useState(false);
+
+  // Modo camuflado
+  const [isCamouflageEnabled, setIsCamouflageEnabled] = useState(false);
 
   // Alterar Senha
   const [currentPassword, setCurrentPassword] = useState('');
@@ -74,13 +78,15 @@ export default function Settings() {
       if (userData) {
         setIsNotificationsEnabled(userData.notifications_enabled);
         setIsLocationEnabled(userData.location_enabled);
+        if (userData.alert_radius) setAlertRadius(userData.alert_radius);
       }
 
       // Busca biometria salva localmente
       const biometry = await AsyncStorage.getItem('isBiometryEnabled');
-      if (biometry !== null) {
-        setIsBiometryEnabled(biometry === 'true');
-      }
+      if (biometry !== null) setIsBiometryEnabled(biometry === 'true');
+
+      const camouflage = await AsyncStorage.getItem('@camouflage_enabled');
+      if (camouflage !== null) setIsCamouflageEnabled(camouflage === 'true');
     } catch (error) {
       console.error('Erro ao carregar configurações do usuário:', error);
     }
@@ -132,6 +138,18 @@ export default function Settings() {
       console.error('Erro ao salvar preferência de localização:', error);
       Alert.alert('Erro', 'Não foi possível atualizar a preferência de localização.');
       setIsLocationEnabled(!value);
+    }
+  };
+
+  const handleChangeAlertRadius = async (value: number) => {
+    setAlertRadius(value);
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) return;
+      await api.put('/user/preferences', { alert_radius: value }, token);
+    } catch (error) {
+      console.error('Erro ao salvar raio de alerta:', error);
+      Alert.alert('Erro', 'Não foi possível salvar o raio de alerta.');
     }
   };
 
@@ -515,6 +533,69 @@ export default function Settings() {
               <Switch
                 value={isNotificationsEnabled}
                 onValueChange={handleToggleNotifications}
+                trackColor={{ false: '#D1D1D1', true: colors.primary }}
+                thumbColor={'#FFF'}
+              />
+            }
+          />
+          <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: colors.border }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+              <View style={[styles.settingIconBox, { backgroundColor: colors.iconBox }]}>
+                <MaterialCommunityIcons name="map-marker-radius-outline" size={24} color={colors.primary} />
+              </View>
+              <View style={{ marginLeft: 16 }}>
+                <Text style={[styles.settingTitle, { color: colors.text }]}>Raio de Alertas</Text>
+                <Text style={[styles.settingSubtitle, { color: colors.subtitle }]}>Distância para ocorrências próximas</Text>
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+              {[
+                { label: '500m', value: 500 },
+                { label: '1km', value: 1000 },
+                { label: '2km', value: 2000 },
+                { label: '5km', value: 5000 },
+                { label: '10km', value: 10000 },
+              ].map(item => (
+                <TouchableOpacity
+                  key={item.value}
+                  onPress={() => handleChangeAlertRadius(item.value)}
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 8,
+                    borderRadius: 20,
+                    borderWidth: 1.5,
+                    borderColor: alertRadius === item.value ? colors.primary : colors.border,
+                    backgroundColor: alertRadius === item.value ? colors.primary : 'transparent',
+                  }}
+                >
+                  <Text style={{ color: alertRadius === item.value ? '#FFF' : colors.subtitle, fontWeight: '600', fontSize: 13 }}>
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </Section>
+
+        <Section title="Modo Camuflado">
+          <SettingItem
+            icon="incognito"
+            title="Disfarçar como Bloco de Notas"
+            subtitle={isCamouflageEnabled ? 'Ativo — app abre como Notas' : 'Desativado'}
+            rightElement={
+              <Switch
+                value={isCamouflageEnabled}
+                onValueChange={async (value) => {
+                  setIsCamouflageEnabled(value);
+                  await AsyncStorage.setItem('@camouflage_enabled', String(value));
+                  if (value) {
+                    Alert.alert(
+                      'Modo Camuflado Ativado',
+                      'O app agora abre como um Bloco de Notas. Para acessar o ElaSegura, toque no título "Notas" 5 vezes seguidas.',
+                      [{ text: 'Entendido' }]
+                    );
+                  }
+                }}
                 trackColor={{ false: '#D1D1D1', true: colors.primary }}
                 thumbColor={'#FFF'}
               />

@@ -11,7 +11,7 @@ router.get('/me', authenticateToken, async (req: any, res: Response) => {
 
   try {
     const result = await query(
-      'SELECT id, name, email, profile_picture, notifications_enabled, location_enabled FROM "user" WHERE id = $1',
+      'SELECT id, name, email, profile_picture, notifications_enabled, location_enabled, alert_radius FROM "user" WHERE id = $1',
       [userId]
     );
 
@@ -106,12 +106,27 @@ router.put('/update-password', authenticateToken, async (req: any, res: Response
 // Update preferences
 router.put('/preferences', authenticateToken, async (req: any, res: Response) => {
   const userId = req.user.id;
-  const { notifications_enabled, location_enabled } = req.body;
+  const { notifications_enabled, location_enabled, alert_radius } = req.body;
+
+  const VALID_RADII = [500, 1000, 2000, 5000, 10000];
+  if (alert_radius !== undefined && !VALID_RADII.includes(Number(alert_radius))) {
+    return res.status(400).json({ error: 'alert_radius must be one of: 500, 1000, 2000, 5000, 10000' });
+  }
 
   try {
     const result = await query(
-      'UPDATE "user" SET notifications_enabled = $1, location_enabled = $2 WHERE id = $3 RETURNING notifications_enabled, location_enabled',
-      [notifications_enabled, location_enabled, userId]
+      `UPDATE "user" SET
+        notifications_enabled = COALESCE($1, notifications_enabled),
+        location_enabled = COALESCE($2, location_enabled),
+        alert_radius = COALESCE($3, alert_radius)
+       WHERE id = $4
+       RETURNING notifications_enabled, location_enabled, alert_radius`,
+      [
+        notifications_enabled ?? null,
+        location_enabled ?? null,
+        alert_radius ?? null,
+        userId,
+      ]
     );
 
     if (result.rows.length === 0) {
@@ -124,5 +139,6 @@ router.put('/preferences', authenticateToken, async (req: any, res: Response) =>
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 export default router;

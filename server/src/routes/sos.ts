@@ -16,7 +16,7 @@ router.post('/', authenticateToken, async (req: any, res: Response) => {
     );
 
     const contatos = await query(
-      'SELECT * FROM "contatos" WHERE user_id = $1 AND emergencial = true LIMIT 3',
+      'SELECT * FROM "contatos" WHERE user_id = $1 AND emergencial = true LIMIT 20',
       [userId]
     );
 

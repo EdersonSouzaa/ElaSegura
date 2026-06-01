@@ -40,6 +40,9 @@ export const initDb = async () => {
     await client.query(`
       ALTER TABLE "user" ADD COLUMN IF NOT EXISTS location_enabled BOOLEAN DEFAULT FALSE;
     `);
+    await client.query(`
+      ALTER TABLE "user" ADD COLUMN IF NOT EXISTS alert_radius INTEGER DEFAULT 5000;
+    `);
 
     // Create Ocorrencia table
     await client.query(`

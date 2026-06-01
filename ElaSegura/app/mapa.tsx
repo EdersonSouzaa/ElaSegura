@@ -7,6 +7,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
 import { Colors } from '../constants/theme';
 import { getStyles } from '../styles/mapa.styles';
+<<<<<<< HEAD
+import AsyncStorage from '@react-native-async-storage/async-storage';
+=======
 import { useLocation } from '../hooks/use-location';
 import { useMarkedZones } from '../hooks/use-marked-zones';
 import {
@@ -16,6 +19,7 @@ import {
   type ZoneLevel,
   type LatLngBounds,
 } from '../components/LeafletMap';
+>>>>>>> 825f13121a140c02c90bd695a3f4b1dbd851285a
 import { api } from '../services/api';
 
 const FORTALEZA_BOUNDS: LatLngBounds = [
@@ -46,10 +50,20 @@ export default function MapaScreen() {
   const colors = Colors[theme];
   const styles = useMemo(() => getStyles(isDarkMode, colors), [isDarkMode, colors]);
 
+<<<<<<< HEAD
+  const [activeZone, setActiveZone] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locationLoading, setLocationLoading] = useState(true);
+  const [locationError, setLocationError] = useState(false);
+  const [occurrences, setOccurrences] = useState<any[]>([]);
+  const webViewRef = useRef<WebView>(null);
+  const locationSubscription = useRef<Location.LocationSubscription | null>(null);
+=======
   const { coords, errorMsg, loading } = useLocation();
   const [incidents, setIncidents] = useState<IncidentMarker[]>([]);
   const [sharing, setSharing] = useState(false);
   const mapRef = useRef<{ recenter: () => void }>(null);
+>>>>>>> 825f13121a140c02c90bd695a3f4b1dbd851285a
 
   // feat #71 — marcação de áreas: cor "armada" na legenda + áreas marcadas (persistidas no device)
   const [markColor, setMarkColor] = useState<ZoneLevel | null>(null);
@@ -59,6 +73,43 @@ export default function MapaScreen() {
     setMarkColor((prev) => (prev === level ? null : level));
   };
 
+<<<<<<< HEAD
+  const isInactive = (zone: string) => activeZone !== null && activeZone !== zone;
+
+  const sendOccurrencesToWebView = (occs: any[]) => {
+    const jsCode = `
+      (function() {
+        if (typeof window.addOccurrenceMarkers === 'function') {
+          window.addOccurrenceMarkers(${JSON.stringify(occs)});
+        }
+      })();
+    `;
+    webViewRef.current?.injectJavaScript(jsCode);
+  };
+
+  const fetchNearbyOccurrences = async (lat: number, lng: number) => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) return;
+      const data = await api.get(`/ocorrencias/proximas?lat=${lat}&lng=${lng}&radius=5000`, token);
+      setOccurrences(data);
+      sendOccurrencesToWebView(data);
+    } catch (error) {
+      console.error('Erro ao buscar ocorrências próximas:', error);
+    }
+  };
+
+  // Função para enviar a localização do usuário para o WebView
+  const sendLocationToWebView = (latitude: number, longitude: number) => {
+    const jsCode = `
+      (function() {
+        if (typeof window.updateUserLocation === 'function') {
+          window.updateUserLocation(${latitude}, ${longitude});
+        }
+      })();
+    `;
+    webViewRef.current?.injectJavaScript(jsCode);
+=======
   // Toque no mapa em modo de marcação: adiciona uma área da cor armada
   const handleMapPress = (lat: number, lng: number) => {
     if (!markColor) return;
@@ -85,6 +136,7 @@ export default function MapaScreen() {
         onPress: () => setMarkedZones((prev) => prev.filter((z) => z.id !== id)),
       },
     ]);
+>>>>>>> 825f13121a140c02c90bd695a3f4b1dbd851285a
   };
 
   useEffect(() => {
@@ -92,11 +144,62 @@ export default function MapaScreen() {
     let cancelled = false;
     (async () => {
       try {
+<<<<<<< HEAD
+        // Solicita permissão de localização
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          if (isMounted) {
+            setLocationError(true);
+            setLocationLoading(false);
+          }
+          Alert.alert(
+            'Permissão de Localização',
+            'É necessário permitir o acesso à localização para exibir sua posição em tempo real no mapa.'
+          );
+          return;
+        }
+
+        // Obtém a localização de forma rápida tentando primeiro a última conhecida
+        const lastKnown = await Location.getLastKnownPositionAsync({});
+        let initialCoords = lastKnown ? lastKnown.coords : null;
+
+        if (!initialCoords) {
+          const initialLocation = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+          initialCoords = initialLocation.coords;
+        }
+
+        if (initialCoords && isMounted) {
+          const { latitude, longitude } = initialCoords;
+          setUserLocation({ latitude, longitude });
+          setLocationLoading(false);
+          // Envia a localização inicial para o WebView
+          sendLocationToWebView(latitude, longitude);
+          fetchNearbyOccurrences(latitude, longitude);
+        }
+
+        // Inicia o rastreamento em tempo real
+        locationSubscription.current = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.Balanced,
+            timeInterval: 5000, // Atualiza a cada 5 segundos
+            distanceInterval: 10, // Ou a cada 10 metros de deslocamento
+          },
+          (location) => {
+            if (isMounted) {
+              const { latitude, longitude } = location.coords;
+              setUserLocation({ latitude, longitude });
+              sendLocationToWebView(latitude, longitude);
+            }
+          }
+=======
         const token = await AsyncStorage.getItem('userToken');
         if (!token) return;
         const data = await api.get(
           `/ocorrencias/proximas?lat=${coords.latitude}&lng=${coords.longitude}&radius=5000`,
           token
+>>>>>>> 825f13121a140c02c90bd695a3f4b1dbd851285a
         );
         if (cancelled || !Array.isArray(data)) return;
         setIncidents(
@@ -119,6 +222,165 @@ export default function MapaScreen() {
     };
   }, [coords?.latitude, coords?.longitude]);
 
+<<<<<<< HEAD
+  const leafletHTML = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <style>
+            body { padding: 0; margin: 0; background-color: #E8EAED; }
+            html, body, #map { height: 100%; width: 100%; }
+            .leaflet-control-attribution { display: none !important; }
+
+            /* Animação do marcador de localização do usuário */
+            @keyframes userPulse {
+                0% { transform: scale(1); opacity: 1; }
+                50% { transform: scale(1.6); opacity: 0.5; }
+                100% { transform: scale(1); opacity: 1; }
+            }
+
+            .user-location-marker {
+                width: 24px;
+                height: 24px;
+                background-color: #007AFF;
+                border: 3px solid #FFFFFF;
+                border-radius: 50%;
+                box-shadow: 0 2px 8px rgba(0, 122, 255, 0.5);
+            }
+
+            .user-location-pulse {
+                width: 24px;
+                height: 24px;
+                background-color: rgba(0, 122, 255, 0.3);
+                border-radius: 50%;
+                animation: userPulse 2s ease-in-out infinite;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="map"></div>
+        <script>
+            var bounds = [
+                [-3.900, -38.650],
+                [-3.650, -38.350]
+            ];
+
+            var map = L.map('map', {
+                zoomControl: false,
+                maxBounds: bounds,
+                maxBoundsViscosity: 1.0,
+                minZoom: 14
+            }).setView([-3.766, -38.483], 14);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19
+            }).addTo(map);
+
+            var activeFilter = "${activeZone || 'all'}";
+
+            // Zonas Seguras (Verde)
+            if (activeFilter === 'all' || activeFilter === 'seguras') {
+                L.circle([-3.771, -38.479], { color: 'rgba(0, 255, 0, 0.8)', fillColor: 'rgba(0, 255, 0, 0.4)', fillOpacity: 1, radius: 800 }).addTo(map);
+                L.circle([-3.754, -38.490], { color: 'rgba(0, 255, 0, 0.8)', fillColor: 'rgba(0, 255, 0, 0.4)', fillOpacity: 1, radius: 1000 }).addTo(map);
+            }
+
+            // Zonas de Alerta (Amarelo)
+            if (activeFilter === 'all' || activeFilter === 'alerta') {
+                L.circle([-3.760, -38.470], { color: 'rgba(255, 204, 0, 0.8)', fillColor: 'rgba(255, 204, 0, 0.4)', fillOpacity: 1, radius: 600 }).addTo(map);
+            }
+
+            // Zonas de Perigo (Vermelho)
+            if (activeFilter === 'all' || activeFilter === 'perigo') {
+                L.circle([-3.768, -38.500], { color: 'rgba(255, 59, 48, 0.8)', fillColor: 'rgba(255, 59, 48, 0.4)', fillOpacity: 1, radius: 900 }).addTo(map);
+            }
+
+            // --- Localização do Usuário em Tempo Real ---
+            var userMarker = null;
+            var userPulseMarker = null;
+
+            // Função chamada pelo React Native para atualizar a localização do usuário
+            window.updateUserLocation = function(lat, lng) {
+                var userLatLng = [lat, lng];
+
+                // Remove marcadores anteriores
+                if (userMarker) {
+                    map.removeLayer(userMarker);
+                }
+                if (userPulseMarker) {
+                    map.removeLayer(userPulseMarker);
+                }
+
+                // Cria ícone personalizado para o marcador do usuário
+                var userIcon = L.divIcon({
+                    className: 'user-location-div-icon',
+                    html: '<div class="user-location-pulse"></div><div class="user-location-marker"></div>',
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                });
+
+                // Adiciona marcador de pulso (efeito visual)
+                userPulseMarker = L.marker(userLatLng, { icon: userIcon }).addTo(map);
+
+                // Adiciona marcador principal
+                userMarker = L.marker(userLatLng, {
+                    icon: L.divIcon({
+                        className: 'user-location-div-icon',
+                        html: '<div style="width:14px;height:14px;background:#007AFF;border:3px solid #FFF;border-radius:50%;box-shadow:0 2px 8px rgba(0,122,255,0.6);"></div>',
+                        iconSize: [14, 14],
+                        iconAnchor: [7, 7]
+                    })
+                }).addTo(map);
+
+                // Centraliza o mapa na localização do usuário
+                map.panTo(userLatLng);
+            };
+
+            // Marcadores de ocorrências
+            var occurrenceMarkers = [];
+
+            window.addOccurrenceMarkers = function(occurrences) {
+              occurrenceMarkers.forEach(function(m) { map.removeLayer(m); });
+              occurrenceMarkers = [];
+
+              occurrences.forEach(function(occ) {
+                if (!occ.latitude || !occ.longitude) return;
+
+                var color = occ.type === 'error' ? '#FF3B30' : '#FFCC00';
+                var textColor = occ.type === 'error' ? 'white' : '#333';
+                var icon = L.divIcon({
+                  className: '',
+                  html: '<div style="width:32px;height:32px;background:' + color + ';border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:' + textColor + ';font-weight:bold;font-size:17px;">!</div>',
+                  iconSize: [32, 32],
+                  iconAnchor: [16, 16]
+                });
+
+                var marker = L.marker([occ.latitude, occ.longitude], { icon: icon })
+                  .addTo(map)
+                  .bindPopup('<b>' + occ.title + '</b><br><small>' + (occ.description || '') + '</small>');
+
+                occurrenceMarkers.push(marker);
+              });
+            };
+
+            // Recebe mensagens do React Native
+            window.addEventListener('message', function(event) {
+                try {
+                    var data = JSON.parse(event.data);
+                    if (data.type === 'location' && data.latitude && data.longitude) {
+                        window.updateUserLocation(data.latitude, data.longitude);
+                    }
+                } catch (e) {
+                    console.error('Erro ao processar mensagem:', e);
+                }
+            });
+        </script>
+    </body>
+    </html>
+  `;
+=======
   const shareLocation = async () => {
     if (!coords) {
       Alert.alert('Localização', 'Aguardando GPS...');
@@ -146,6 +408,7 @@ export default function MapaScreen() {
       setSharing(false);
     }
   };
+>>>>>>> 825f13121a140c02c90bd695a3f4b1dbd851285a
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>

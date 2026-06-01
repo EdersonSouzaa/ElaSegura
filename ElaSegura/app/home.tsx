@@ -76,22 +76,32 @@ const Home = () => {
     }
   }, []);
 
-  const loadOccurrences = useCallback(async () => {
+  const loadAlerts = useCallback(async () => {
     try {
       const token = await AsyncStorage.getItem('userToken');
       if (token) {
-        const data = await api.get('/ocorrencias', token);
-        setOccurrences(data);
+        const data = await api.get('/alertas', token);
+        setOccurrences(data.alerts || []);
       }
     } catch (error) {
-      console.error('Erro ao carregar ocorrências:', error);
+      console.error('Erro ao carregar alertas:', error);
     }
   }, []);
 
+<<<<<<< HEAD
+  const formatAlertTime = (iso: string) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const day = d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' });
+    const time = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return `${day}, ${time}`;
+  };
+=======
   // Áreas marcadas no mapa (feat #71) — exibidas também no preview da home
   const loadMarked = useCallback(async () => {
     setMarkedZones(await loadMarkedZones());
   }, []);
+>>>>>>> 825f13121a140c02c90bd695a3f4b1dbd851285a
 
   // --- EFEITO DE FOCO (Unificado em um único hook) ---
 
@@ -99,9 +109,14 @@ const Home = () => {
     useCallback(() => {
       loadUserData();
       loadLocationPreference();
+<<<<<<< HEAD
+      loadAlerts();
+    }, [loadUserData, loadLocationPreference, loadAlerts])
+=======
       loadOccurrences();
       loadMarked();
     }, [loadUserData, loadLocationPreference, loadOccurrences, loadMarked])
+>>>>>>> 825f13121a140c02c90bd695a3f4b1dbd851285a
   );
 
   return (
@@ -214,20 +229,23 @@ const Home = () => {
           </View>
 
           <View style={{ gap: 15 }}>
-            <OccurrenceCard
-              styles={styles}
-              colors={colors}
-              title="Roubo"
-              description="pegaram meu celular na esquina"
-              time="10 Abril, 10:59"
-            />
-            <OccurrenceCard
-              styles={styles}
-              colors={colors}
-              title="Assédio"
-              description="assoviaram para mim"
-              time="15 Abril, 11:30"
-            />
+            {occurrences.length === 0 ? (
+              <View style={{ alignItems: 'center', paddingVertical: 20 }}>
+                <Text style={{ color: colors.secondary, fontSize: 14 }}>Nenhuma ocorrência recente.</Text>
+              </View>
+            ) : (
+              occurrences.slice(0, 2).map((item) => (
+                <OccurrenceCard
+                  key={`${item.source}-${item.id}`}
+                  styles={styles}
+                  colors={colors}
+                  title={item.title}
+                  description={item.description}
+                  time={formatAlertTime(item.created_at)}
+                  source={item.source}
+                />
+              ))
+            )}
           </View>
         </View>
       </ScrollView>
@@ -352,14 +370,18 @@ const Home = () => {
                 <Text style={{ textAlign: 'center', marginTop: 20, color: colors.secondary }}>Nenhuma ocorrência encontrada.</Text>
               ) : (
                 occurrences.map((item) => (
-                  <View key={item.id || item._id} style={styles.occurrenceCard}>
+                  <View key={`${item.source}-${item.id}`} style={styles.occurrenceCard}>
                     <View style={styles.occurrenceIconBox}>
-                      <MaterialIcons name={item.type === 'error' ? "error" : "warning"} size={30} color={colors.primary} />
+                      <MaterialCommunityIcons
+                        name={item.source === 'sos' ? 'shield-alert' : 'alert-circle'}
+                        size={30}
+                        color={item.source === 'sos' ? '#FF5252' : colors.primary}
+                      />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.occurrenceTitle}>{item.title}</Text>
-                      <Text style={styles.occurrenceDescription}>{item.description || item.desc}</Text>
-                      <Text style={styles.occurrenceTime}>{item.time}</Text>
+                      <Text style={styles.occurrenceDescription}>{item.description}</Text>
+                      <Text style={styles.occurrenceTime}>{formatAlertTime(item.created_at)}</Text>
                     </View>
                   </View>
                 ))
@@ -384,10 +406,14 @@ const QuickAccessCard = ({ icon, label, onPress, styles }: any) => (
   </TouchableOpacity>
 );
 
-const OccurrenceCard = ({ title, description, time, styles, colors }: any) => (
+const OccurrenceCard = ({ title, description, time, source, styles, colors }: any) => (
   <View style={styles.occurrenceCard}>
     <View style={styles.occurrenceIconBox}>
-      <MaterialCommunityIcons name="alert-circle" size={30} color={colors.primary} />
+      <MaterialCommunityIcons
+        name={source === 'sos' ? 'shield-alert' : 'alert-circle'}
+        size={30}
+        color={source === 'sos' ? '#FF5252' : colors.primary}
+      />
     </View>
     <View style={styles.occurrenceInfo}>
       <Text style={styles.occurrenceTitle}>{title}</Text>
