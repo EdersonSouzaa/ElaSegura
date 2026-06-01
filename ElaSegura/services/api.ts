@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 const envApiUrl = process.env.EXPO_PUBLIC_API_URL;
@@ -6,9 +7,30 @@ const isLocalWeb =
   typeof window !== 'undefined' &&
   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
-// No navegador da mesma maquina usamos localhost.
-// Em celular fisico continuamos usando o IP configurado no .env.
-const API_URL = isLocalWeb ? 'http://localhost:3000' : envApiUrl || 'http://10.0.1.108:3000';
+const getExpoHostApiUrl = () => {
+  const constants = Constants as any;
+  const hostUri =
+    Constants.expoConfig?.hostUri ||
+    constants.manifest2?.extra?.expoClient?.hostUri ||
+    constants.manifest?.debuggerHost;
+  const host = typeof hostUri === 'string' ? hostUri.split(':')[0] : '';
+
+  return host ? `http://${host}:3000` : null;
+};
+
+const getApiUrl = () => {
+  if (isLocalWeb) {
+    return 'http://localhost:3000';
+  }
+
+  if (envApiUrl) {
+    return envApiUrl;
+  }
+
+  return getExpoHostApiUrl() || 'http://localhost:3000';
+};
+
+const API_URL = getApiUrl();
 
 export const api = {
   async post(endpoint: string, data: any, token?: string) {

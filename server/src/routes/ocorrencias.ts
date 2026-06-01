@@ -35,6 +35,88 @@ router.post('/', authenticateToken, async (req: any, res: Response) => {
   }
 });
 
+// List latest ocorrencias for Home
+router.get('/recentes', async (_req: Request, res: Response) => {
+  try {
+    const result = await query(
+      `SELECT
+         o.id,
+         o.title,
+         o.description,
+         o.location,
+         o.created_at,
+         u.name AS user_name
+       FROM "ocorrencia" o
+       INNER JOIN "user" u ON u.id = o.user_id
+       ORDER BY o.created_at DESC
+       LIMIT 10`
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching recent ocorrencias:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Map data (areas grouped by location + recent occurrences)
+router.get('/mapa', async (_req: Request, res: Response) => {
+  try {
+    const areasResult = await query(
+      `SELECT
+         location_name AS name,
+         incidents,
+         CASE
+           WHEN incidents >= 5 THEN 'danger'
+           WHEN incidents >= 2 THEN 'medium'
+           ELSE 'safe'
+         END AS risk
+       FROM (
+         SELECT
+           COALESCE(NULLIF(TRIM(location), ''), 'Nao informado') AS location_name,
+           COUNT(*)::int AS incidents
+         FROM "ocorrencia"
+         GROUP BY 1
+       ) grouped
+       ORDER BY incidents DESC, name ASC
+       LIMIT 30`
+    );
+
+    const occurrencesResult = await query(
+      `WITH location_stats AS (
+         SELECT
+           COALESCE(NULLIF(TRIM(location), ''), 'Nao informado') AS location_name,
+           COUNT(*)::int AS incidents
+         FROM "ocorrencia"
+         GROUP BY 1
+       )
+       SELECT
+         o.id,
+         COALESCE(NULLIF(TRIM(o.location), ''), 'Nao informado') AS bairro,
+         o.title AS tipo,
+         o.created_at,
+         CASE
+           WHEN ls.incidents >= 5 THEN 'danger'
+           WHEN ls.incidents >= 2 THEN 'medium'
+           ELSE 'safe'
+         END AS risco
+       FROM "ocorrencia" o
+       INNER JOIN location_stats ls
+         ON ls.location_name = COALESCE(NULLIF(TRIM(o.location), ''), 'Nao informado')
+       ORDER BY o.created_at DESC
+       LIMIT 50`
+    );
+
+    res.json({
+      areas: areasResult.rows,
+      occurrences: occurrencesResult.rows,
+    });
+  } catch (error) {
+    console.error('Error fetching mapa data:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // List Ocorrencias (user's own)
 router.get('/', authenticateToken, async (req: any, res: Response) => {
   const userId = req.user.id;

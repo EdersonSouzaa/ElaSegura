@@ -166,6 +166,34 @@ export const getStyles = (isDarkMode: boolean, colors: any) => StyleSheet.create
   },
   occurrenceInfo: { flex: 1 },
   occurrenceTimeRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+  loadingOccurrencesContainer: {
+    alignItems: 'center',
+    backgroundColor: colors.cardBackground,
+    borderRadius: 25,
+    gap: 10,
+    padding: 20,
+  },
+  loadingOccurrencesText: {
+    color: colors.secondary,
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  emptyOccurrencesCard: {
+    backgroundColor: colors.cardBackground,
+    borderRadius: 25,
+    gap: 8,
+    padding: 20,
+  },
+  emptyOccurrencesTitle: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  emptyOccurrencesText: {
+    color: colors.secondary,
+    fontSize: 13,
+    lineHeight: 18,
+  },
   quickAccessIconImage: {
     width: 28,
     height: 28,

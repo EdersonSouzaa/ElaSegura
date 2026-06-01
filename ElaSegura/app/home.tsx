@@ -1,37 +1,48 @@
-import React, { useEffect } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  Image,
-  TouchableOpacity,
-  SafeAreaView,
-  StatusBar,
-  Platform,
-} from 'react-native';
-import * as Notifications from 'expo-notifications';
-import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { getStyles } from '../styles/home.styles';
-import { useRouter } from 'expo-router';
-import { useState, useMemo } from 'react';
-import { Modal } from 'react-native';
-import { useTheme } from '../context/ThemeContext';
-import { Colors } from '../constants/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
+import * as Notifications from 'expo-notifications';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Modal,
+  Platform,
+  ScrollView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { Colors } from '../constants/theme';
+import { useTheme } from '../context/ThemeContext';
+import { api } from '../services/api';
+import { getStyles } from '../styles/home.styles';
 
 const MAPA_IMAGE = require('../assets/images/mapa.png');
-const Ocorrencia_image = require('../assets/images/ocorrencia.png');
-const Contatos_image = require('../assets/images/contatos.png');
-const Alerta_image = require('../assets/images/alerta.png');
-const Areas_image = require('../assets/images/areas.png');
+const CONTATOS_IMAGE = require('../assets/images/contatos.png');
+const ALERTA_IMAGE = require('../assets/images/alerta.png');
+const AREAS_IMAGE = require('../assets/images/areas.png');
+const HOME_RECENT_CLEAR_KEY = 'homeRecentClearedAt';
+
+type HomeOccurrence = {
+  created_at: string;
+  description: null | string;
+  id: number;
+  location: null | string;
+  title: string;
+  user_name: string;
+};
 
 if (Platform.OS !== 'web') {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
-      shouldShowBanner: true,
-      shouldShowList: true,
       shouldPlaySound: true,
       shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
     }),
   });
 }
@@ -39,81 +50,142 @@ if (Platform.OS !== 'web') {
 const Home = () => {
   const router = useRouter();
   const { isDarkMode, theme } = useTheme();
-  const [modalVisible, setModalVisible] = useState(false);
-  
-   const colors = Colors[theme];
+  const colors = Colors[theme];
   const styles = useMemo(() => getStyles(isDarkMode, colors), [isDarkMode, colors]);
 
+  const [modalVisible, setModalVisible] = useState(false);
+  const [recentOccurrences, setRecentOccurrences] = useState<HomeOccurrence[]>([]);
+  const [recentOccurrencesError, setRecentOccurrencesError] = useState('');
+  const [loadingRecentOccurrences, setLoadingRecentOccurrences] = useState(true);
+  const [recentClearedAt, setRecentClearedAt] = useState<null | string>(null);
   const [userName, setUserName] = useState('');
 
   useEffect(() => {
     const loadUserName = async () => {
       try {
         const savedUser = await AsyncStorage.getItem('user');
-        if (savedUser) {
-          const user = JSON.parse(savedUser);
-          // Pega apenas o primeiro nome para ficar mais amigável
-          const firstName = user.name.split(' ')[0];
-          setUserName(firstName);
+        if (!savedUser) {
+          return;
         }
+
+        const user = JSON.parse(savedUser);
+        const firstName = user.name.split(' ')[0];
+        setUserName(firstName);
       } catch (error) {
         console.error('Erro ao carregar nome:', error);
       }
     };
+
     loadUserName();
   }, []);
 
   useEffect(() => {
-    if (Platform.OS === 'web') return;
+    if (Platform.OS === 'web') {
+      return;
+    }
+
     (async () => {
       const { status } = await Notifications.requestPermissionsAsync();
       if (status !== 'granted') {
-        console.log('Permissão para notificações negada');
+        console.log('Permissao para notificacoes negada');
       }
     })();
   }, []);
 
-  const triggerDangerZoneAlert = async () => {
+  const loadRecentOccurrences = useCallback(async () => {
+    try {
+      setLoadingRecentOccurrences(true);
+      const clearedAt = await AsyncStorage.getItem(HOME_RECENT_CLEAR_KEY);
+      setRecentClearedAt(clearedAt);
+
+      const token = await AsyncStorage.getItem('userToken');
+      const data = token
+        ? await api.get('/ocorrencias/recentes', token)
+        : await api.get('/ocorrencias/recentes');
+      const allOccurrences = Array.isArray(data) ? data : [];
+      const filteredOccurrences = clearedAt
+        ? allOccurrences.filter(
+            (item) => new Date(item.created_at).getTime() > new Date(clearedAt).getTime()
+          )
+        : allOccurrences;
+
+      setRecentOccurrences(filteredOccurrences);
+      setRecentOccurrencesError('');
+    } catch (error) {
+      console.error('Erro ao carregar ocorrencias recentes:', error);
+      setRecentOccurrencesError('Nao foi possivel carregar as ocorrencias recentes.');
+    } finally {
+      setLoadingRecentOccurrences(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadRecentOccurrences();
+    }, [loadRecentOccurrences])
+  );
+
+  const formatOccurrenceTime = (value: string) =>
+    new Date(value).toLocaleString('pt-BR', {
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      month: 'short',
+    });
+
+  const visibleOccurrences = recentOccurrences.slice(0, 2);
+
+  const clearRecentOccurrences = async () => {
+    const performClear = async () => {
+      const now = new Date().toISOString();
+      setRecentClearedAt(now);
+      setRecentOccurrences([]);
+      setModalVisible(false);
+      try {
+        await AsyncStorage.setItem(HOME_RECENT_CLEAR_KEY, now);
+      } catch (storageError) {
+        console.error('Erro ao salvar limpeza local das ocorrencias:', storageError);
+      }
+    };
+
     if (Platform.OS === 'web') {
-      alert("⚠️ Atenção: Área de Risco\nVocê está se aproximando de uma região com alto índice de ocorrências. (Simulação na Web)");
+      await performClear();
       return;
     }
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: "⚠️ Atenção: Área de Risco",
-        body: "Você está se aproximando de uma região com alto índice de ocorrências. Mantenha a atenção ao seu redor.",
-        sound: true,
-      },
-      trigger: null,
-    });
+
+    Alert.alert(
+      'Limpar ocorrencias recentes?',
+      'As ocorrencias atuais sairao da Home e voltarao apenas quando novas forem registradas.',
+      [
+        { style: 'cancel', text: 'Cancelar' },
+        {
+          style: 'destructive',
+          text: 'Limpar',
+          onPress: () => {
+            void performClear();
+          },
+        },
+      ]
+    );
   };
 
-  const mockOcorrencias = [
-    { id: 1, title: 'Roubo', desc: 'pegaram meu celular na esquina', time: '10 Abril, 10:59', type: 'error' },
-    { id: 2, title: 'Assédio', desc: 'assoviaram para mim', time: '15 Abril, 11:30', type: 'error' },
-    { id: 3, title: 'Insegurança', desc: 'Rua muito escura e sem policiamento', time: '16 Abril, 20:15', type: 'warning' },
-    { id: 4, title: 'Tentativa de Furto', desc: 'Tentaram puxar minha bolsa', time: '18 Abril, 08:45', type: 'error' },
-    { id: 5, title: 'Assédio Verbal', desc: 'Comentários ofensivos no ônibus', time: '20 Abril, 14:20', type: 'error' },
-  ];
-  
   return (
     <View style={styles.container}>
-      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={isDarkMode ? colors.cardBackground : "#FFF"} />
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor={isDarkMode ? colors.cardBackground : '#FFF'}
+      />
 
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Cabeçalho esticado até as bordas */}
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <View style={styles.headerContent}>
-              <Text style={styles.headerGreeting}>Olá, {userName || 'Usuária'} 👋</Text>
-              <Text style={styles.headerStatus}>Você está segura aqui 💜</Text>
+              <Text style={styles.headerGreeting}>Ola, {userName || 'Usuaria'} 👋</Text>
+              <Text style={styles.headerStatus}>Voce esta segura aqui 💜</Text>
             </View>
-            
-            <TouchableOpacity 
-              style={styles.headerAvatar} 
+
+            <TouchableOpacity
+              style={styles.headerAvatar}
               onPress={() => router.push('/perfil')}
               activeOpacity={0.8}
             >
@@ -123,55 +195,62 @@ const Home = () => {
         </View>
 
         <View style={styles.content}>
-          {/* Mapa com bordas bem arredondadas */}
           <TouchableOpacity activeOpacity={0.9} style={styles.mapCard}>
-            <Image
-              source={MAPA_IMAGE}
-              style={styles.mapImage}
-              resizeMode="cover"
-            />
+            <Image source={MAPA_IMAGE} style={styles.mapImage} resizeMode="cover" />
           </TouchableOpacity>
 
-          {/* Acesso rápido */}
-          <Text style={styles.sectionTitle}>Acesso rápido</Text>
+          <Text style={styles.sectionTitle}>Acesso rapido</Text>
           <View style={styles.quickAccessGrid}>
-            {/* 1. Ocorrências */}
             <QuickAccessCard
               styles={styles}
               icon={<MaterialCommunityIcons name="file-alert-outline" size={28} color={colors.primary} />}
-              label="Ocorrências"
+              label="Ocorrencias"
               onPress={() => router.push('/ocorrencias')}
             />
 
-            {/* 2. Contatos SOS */}
             <QuickAccessCard
               styles={styles}
-              icon={<Image source={Contatos_image} style={[styles.quickAccessIconImage, { tintColor: colors.primary }]} resizeMode="contain" />}
+              icon={
+                <Image
+                  source={CONTATOS_IMAGE}
+                  style={[styles.quickAccessIconImage, { tintColor: colors.primary }]}
+                  resizeMode="contain"
+                />
+              }
               label="Contatos SOS"
               onPress={() => router.push('/contatos')}
             />
 
-            {/* 3. Alertas Recentes */}
             <QuickAccessCard
               styles={styles}
-              icon={<Image source={Alerta_image} style={[styles.quickAccessIconImage, { tintColor: colors.primary }]} resizeMode="contain" />}
+              icon={
+                <Image
+                  source={ALERTA_IMAGE}
+                  style={[styles.quickAccessIconImage, { tintColor: colors.primary }]}
+                  resizeMode="contain"
+                />
+              }
               label="Alertas Recentes"
               onPress={() => router.push('/alertas' as any)}
             />
 
-            {/* 4. Áreas de Risco */}
             <QuickAccessCard
-            styles={styles}
-        icon={<Image source={Areas_image} style={[styles.quickAccessIconImage, { tintColor: colors.primary }]} resizeMode="contain" />}
-        label="Áreas de risco"
-        onPress={() => router.push('/mapa' as any)}
-        />
+              styles={styles}
+              icon={
+                <Image
+                  source={AREAS_IMAGE}
+                  style={[styles.quickAccessIconImage, { tintColor: colors.primary }]}
+                  resizeMode="contain"
+                />
+              }
+              label="Areas de risco"
+              onPress={() => router.push('/mapa' as any)}
+            />
           </View>
 
-          {/* Botão SOS centralizado */}
           <View style={styles.sosWrapper}>
-            <TouchableOpacity 
-              style={styles.sosButton} 
+            <TouchableOpacity
+              style={styles.sosButton}
               activeOpacity={0.8}
               onPress={() => router.push('/sos' as any)}
             >
@@ -179,90 +258,142 @@ const Home = () => {
             </TouchableOpacity>
           </View>
 
-          {/* Ocorrências Recentes */}
           <View style={styles.recentSectionHeader}>
-            <Text style={styles.sectionTitle}>Ocorrências Recentes</Text>
-            <TouchableOpacity onPress={() => setModalVisible(true)}>
-              <Text style={{ color: colors.primary, fontWeight: 'bold' }}>Ver todas ❯</Text>
-            </TouchableOpacity>
+            <Text style={styles.sectionTitle}>Ocorrencias Recentes</Text>
+            <View style={{ flexDirection: 'row', gap: 16 }}>
+              <TouchableOpacity hitSlop={8} onPress={clearRecentOccurrences}>
+                <Text style={{ color: colors.secondary, fontWeight: '600' }}>Limpar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setModalVisible(true)}>
+                <Text style={{ color: colors.primary, fontWeight: 'bold' }}>Ver todas ❯</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
-          <View style={{ gap: 15 }}>
-            <OccurrenceCard
-              styles={styles}
-              colors={colors}
-              title="Roubo"
-              description="pegaram meu celular na esquina"
-              time="10 Abril, 10:59"
-            />
-            <OccurrenceCard
-              styles={styles}
-              colors={colors}
-              title="Assédio"
-              description="assoviaram para mim"
-              time="15 Abril, 11:30"
-            />
-          </View>
+          {loadingRecentOccurrences ? (
+            <View style={styles.loadingOccurrencesContainer}>
+              <ActivityIndicator color={colors.primary} size="small" />
+              <Text style={styles.loadingOccurrencesText}>Carregando ocorrencias...</Text>
+            </View>
+          ) : recentOccurrencesError ? (
+            <View style={styles.emptyOccurrencesCard}>
+              <Text style={styles.emptyOccurrencesTitle}>Nao foi possivel carregar</Text>
+              <Text style={styles.emptyOccurrencesText}>{recentOccurrencesError}</Text>
+            </View>
+          ) : recentOccurrences.length === 0 && recentClearedAt ? (
+            <View style={styles.emptyOccurrencesCard}>
+              <Text style={styles.emptyOccurrencesTitle}>Lista limpa na Home</Text>
+              <Text style={styles.emptyOccurrencesText}>
+                Novas ocorrencias aparecerao aqui automaticamente.
+              </Text>
+            </View>
+          ) : recentOccurrences.length === 0 ? (
+            <View style={styles.emptyOccurrencesCard}>
+              <Text style={styles.emptyOccurrencesTitle}>Nenhuma ocorrencia recente</Text>
+              <Text style={styles.emptyOccurrencesText}>
+                Assim que novas ocorrencias forem registradas, elas aparecerao aqui.
+              </Text>
+            </View>
+          ) : (
+            <View style={{ gap: 15 }}>
+              {visibleOccurrences.map((item) => (
+                <OccurrenceCard
+                  key={item.id}
+                  styles={styles}
+                  colors={colors}
+                  title={item.title}
+                  description={item.description || item.location || 'Ocorrencia registrada'}
+                  time={formatOccurrenceTime(item.created_at)}
+                />
+              ))}
+            </View>
+          )}
         </View>
       </ScrollView>
 
-      {/* Barra de Navegação Inferior */}
       <View style={styles.bottomNav}>
-        <NavItem active icon={<MaterialIcons name="home" size={28} color={colors.primary} />} label="Início" styles={styles} />
-        <NavItem icon={<MaterialCommunityIcons name="alert-outline" size={28} color={colors.secondary} />} label="Ocorrencias" onPress={() => router.push('/ocorrencias')} styles={styles} />
-        <NavItem icon={<MaterialCommunityIcons name="account-plus-outline" size={28} color={colors.secondary} />} label="Contatos" onPress={() => router.push('/contatos')} styles={styles} />
-        <NavItem 
-          icon={<MaterialCommunityIcons name="bell-outline" size={28} color={colors.secondary} />} 
-          label="Alertas" 
+        <NavItem
+          active
+          icon={<MaterialIcons name="home" size={28} color={colors.primary} />}
+          label="Inicio"
+          styles={styles}
+        />
+        <NavItem
+          icon={<MaterialCommunityIcons name="alert-outline" size={28} color={colors.secondary} />}
+          label="Ocorrencias"
+          onPress={() => router.push('/ocorrencias')}
+          styles={styles}
+        />
+        <NavItem
+          icon={<MaterialCommunityIcons name="account-plus-outline" size={28} color={colors.secondary} />}
+          label="Contatos"
+          onPress={() => router.push('/contatos')}
+          styles={styles}
+        />
+        <NavItem
+          icon={<MaterialCommunityIcons name="bell-outline" size={28} color={colors.secondary} />}
+          label="Alertas"
           onPress={() => router.push('/alertas' as any)}
           styles={styles}
         />
-        <NavItem 
-          icon={<MaterialCommunityIcons name="account-circle-outline" size={28} color={colors.secondary} />} 
-          label="Perfil" 
+        <NavItem
+          icon={<MaterialCommunityIcons name="account-circle-outline" size={28} color={colors.secondary} />}
+          label="Perfil"
           onPress={() => router.push('/perfil')}
           styles={styles}
         />
-        <NavItem 
-          icon={<MaterialCommunityIcons name="cog-outline" size={28} color={colors.secondary} />} 
-          label="Ajustes" 
+        <NavItem
+          icon={<MaterialCommunityIcons name="cog-outline" size={28} color={colors.secondary} />}
+          label="Ajustes"
           onPress={() => router.push('/settings')}
           styles={styles}
         />
       </View>
 
-      {/* POPUP DE OCORRÊNCIAS */}
       <Modal
         animationType="slide"
-        transparent={true}
+        transparent
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.sectionTitle}>Últimas Ocorrências</Text>
-              <TouchableOpacity 
-                style={styles.closeButton} 
-                onPress={() => setModalVisible(false)}
-              >
+              <Text style={styles.sectionTitle}>Ultimas Ocorrencias</Text>
+              <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
                 <MaterialIcons name="close" size={28} color={colors.text} />
               </TouchableOpacity>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
-              {mockOcorrencias.map((item) => (
-                <View key={item.id} style={styles.occurrenceCard}>
-                  <View style={styles.occurrenceIconBox}>
-                    <MaterialIcons name={item.type === 'error' ? "error" : "warning"} size={30} color={colors.primary} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.occurrenceTitle}>{item.title}</Text>
-                    <Text style={styles.occurrenceDescription}>{item.desc}</Text>
-                    <Text style={styles.occurrenceTime}>{item.time}</Text>
-                  </View>
+              {loadingRecentOccurrences ? (
+                <View style={styles.loadingOccurrencesContainer}>
+                  <ActivityIndicator color={colors.primary} size="small" />
+                  <Text style={styles.loadingOccurrencesText}>Carregando ocorrencias...</Text>
                 </View>
-              ))}
+              ) : recentOccurrences.length === 0 ? (
+                <View style={styles.emptyOccurrencesCard}>
+                  <Text style={styles.emptyOccurrencesTitle}>Nenhuma ocorrencia recente</Text>
+                  <Text style={styles.emptyOccurrencesText}>
+                    Nenhum item foi encontrado para exibir no momento.
+                  </Text>
+                </View>
+              ) : (
+                recentOccurrences.map((item) => (
+                  <View key={item.id} style={styles.occurrenceCard}>
+                    <View style={styles.occurrenceIconBox}>
+                      <MaterialIcons name="error" size={30} color={colors.primary} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.occurrenceTitle}>{item.title}</Text>
+                      <Text style={styles.occurrenceDescription}>
+                        {item.description || item.location || 'Ocorrencia registrada'}
+                      </Text>
+                      <Text style={styles.occurrenceTime}>{formatOccurrenceTime(item.created_at)}</Text>
+                    </View>
+                  </View>
+                ))
+              )}
               <View style={{ height: 20 }} />
             </ScrollView>
           </View>
@@ -274,9 +405,7 @@ const Home = () => {
 
 const QuickAccessCard = ({ icon, label, onPress, styles }: any) => (
   <TouchableOpacity style={styles.quickAccessCard} activeOpacity={0.7} onPress={onPress}>
-    <View style={styles.quickAccessIconBox}>
-      {icon}
-    </View>
+    <View style={styles.quickAccessIconBox}>{icon}</View>
     <Text style={styles.quickAccessLabel}>{label}</Text>
   </TouchableOpacity>
 );
@@ -299,9 +428,7 @@ const OccurrenceCard = ({ title, description, time, styles, colors }: any) => (
 
 const NavItem = ({ active, icon, label, onPress, styles }: any) => (
   <TouchableOpacity style={styles.navItem} activeOpacity={0.7} onPress={onPress}>
-    <View style={active ? styles.navIconActive : undefined}>
-      {icon}
-    </View>
+    <View style={active ? styles.navIconActive : undefined}>{icon}</View>
     <Text style={[styles.navLabel, active && styles.navLabelActive]}>{label}</Text>
   </TouchableOpacity>
 );

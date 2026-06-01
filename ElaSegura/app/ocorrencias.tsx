@@ -1,5 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import { router } from 'expo-router';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -10,52 +16,165 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import { Colors } from '../constants/theme';
 import { useTheme } from '../context/ThemeContext';
+import { api } from '../services/api';
 import { getStyles } from '../styles/ocorrencias.styles';
 
 type OccurrenceType = 'error' | 'warning';
 type TabType = 'gerais' | 'proximas';
 
 type Occurrence = {
-  id: number;
-  title: string;
   desc: string;
-  time: string;
-  type: OccurrenceType;
   distance: number;
+  id: number;
+  location: string;
+  time: string;
+  title: string;
+  type: OccurrenceType;
 };
 
-const initialOccurrences: Occurrence[] = [
-  { id: 1, title: 'Roubo', desc: 'Pegaram meu celular na esquina', time: '10 Abril, 10:59', type: 'error', distance: 250 },
-  { id: 2, title: 'Assedio', desc: 'Assoviaram para mim', time: '15 Abril, 11:30', type: 'error', distance: 800 },
-  { id: 3, title: 'Inseguranca', desc: 'Rua muito escura e sem policiamento', time: '16 Abril, 20:15', type: 'warning', distance: 1500 },
-  { id: 4, title: 'Tentativa de Furto', desc: 'Tentaram puxar minha bolsa', time: '18 Abril, 08:45', type: 'error', distance: 450 },
-  { id: 5, title: 'Assedio Verbal', desc: 'Comentarios ofensivos no onibus', time: '20 Abril, 14:20', type: 'error', distance: 3000 },
-  { id: 6, title: 'Suspeita', desc: 'Carro seguindo lentamente', time: '21 Abril, 19:00', type: 'warning', distance: 120 },
-];
+type BackendOccurrence = {
+  created_at: string;
+  description: null | string;
+  id: number;
+  location: null | string;
+  title: string;
+};
 
 const occurrenceTypes: { label: string; value: OccurrenceType; icon: keyof typeof MaterialIcons.glyphMap }[] = [
   { label: 'Emergencia', value: 'error', icon: 'error' },
   { label: 'Atencao', value: 'warning', icon: 'warning' },
 ];
 
+const normalizeText = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+const getOccurrenceType = (title: string, description: null | string): OccurrenceType => {
+  const normalized = normalizeText(`${title} ${description ?? ''}`);
+  const warningWords = ['atencao', 'suspeita', 'inseguranca', 'iluminacao'];
+
+  return warningWords.some((word) => normalized.includes(word)) ? 'warning' : 'error';
+};
+
+const formatOccurrenceTime = (value: string) => {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return 'Data nao informada';
+  }
+
+  return date
+    .toLocaleString('pt-BR', {
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      month: 'long',
+    })
+    .replace(' de ', ' ');
+};
+
+const mapBackendOccurrence = (item: BackendOccurrence): Occurrence => ({
+  desc: item.description || 'Sem descricao informada',
+  distance: 0,
+  id: Number(item.id),
+  location: item.location?.trim() || 'Local nao informado',
+  time: formatOccurrenceTime(item.created_at),
+  title: item.title || 'Ocorrencia',
+  type: getOccurrenceType(item.title || '', item.description),
+});
+
+const getStoredToken = async () => {
+  const savedToken = await AsyncStorage.getItem('userToken');
+
+  if (savedToken) {
+    return savedToken;
+  }
+
+  const savedUser = await AsyncStorage.getItem('user');
+  const savedPassword = await AsyncStorage.getItem('userPassword');
+
+  if (!savedUser || !savedPassword) {
+    return null;
+  }
+
+  const user = JSON.parse(savedUser);
+  if (!user?.email) {
+    return null;
+  }
+
+  const response = await api.post('/auth/login', {
+    email: user.email,
+    password: savedPassword,
+  });
+
+  if (!response.token) {
+    return null;
+  }
+
+  await AsyncStorage.setItem('userToken', response.token);
+  if (response.user) {
+    await AsyncStorage.setItem('user', JSON.stringify(response.user));
+  }
+
+  return response.token;
+};
+
 export default function Ocorrencias() {
   const { isDarkMode, theme } = useTheme();
   const colors = Colors[theme];
   const styles = useMemo(() => getStyles(isDarkMode, colors), [isDarkMode, colors]);
 
-  const [occurrences, setOccurrences] = useState(initialOccurrences);
+  const [occurrences, setOccurrences] = useState<Occurrence[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('proximas');
   const [radiusFilter, setRadiusFilter] = useState(1000);
   const [modalVisible, setModalVisible] = useState(false);
   const [title, setTitle] = useState('');
+  const [location, setLocation] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState<OccurrenceType>('error');
+  const [loadingOccurrences, setLoadingOccurrences] = useState(true);
+  const [savingOccurrence, setSavingOccurrence] = useState(false);
+  const [loadError, setLoadError] = useState('');
 
-  const canSave = title.trim().length > 0 && description.trim().length > 0;
+  const canSave =
+    title.trim().length > 0 &&
+    location.trim().length > 0 &&
+    description.trim().length > 0 &&
+    !savingOccurrence;
+
+  const loadOccurrences = useCallback(async () => {
+    try {
+      setLoadingOccurrences(true);
+      const token = await getStoredToken();
+
+      if (!token) {
+        setOccurrences([]);
+        setLoadError('Entre na sua conta para ver e registrar ocorrencias.');
+        return;
+      }
+
+      const data = await api.get('/ocorrencias', token);
+      const backendOccurrences = Array.isArray(data) ? data : [];
+
+      setOccurrences(backendOccurrences.map(mapBackendOccurrence));
+      setLoadError('');
+    } catch (error) {
+      console.error('Erro ao carregar ocorrencias:', error);
+      setLoadError('Nao foi possivel carregar as ocorrencias.');
+    } finally {
+      setLoadingOccurrences(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadOccurrences();
+    }, [loadOccurrences])
+  );
 
   const filteredOccurrences = useMemo(() => {
     if (activeTab === 'gerais') {
@@ -69,6 +188,7 @@ export default function Ocorrencias() {
 
   const resetForm = () => {
     setTitle('');
+    setLocation('');
     setDescription('');
     setType('error');
   };
@@ -78,33 +198,39 @@ export default function Ocorrencias() {
     resetForm();
   };
 
-  const formatOccurrenceTime = () => {
-    const now = new Date();
-    const date = now
-      .toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })
-      .replace(' de ', ' ');
-    const time = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-    return `${date}, ${time}`;
-  };
-
-  const handleRegisterOccurrence = () => {
+  const handleRegisterOccurrence = async () => {
     if (!canSave) {
       return;
     }
 
-    const newOccurrence: Occurrence = {
-      id: Date.now(),
-      title: title.trim(),
-      desc: description.trim(),
-      time: formatOccurrenceTime(),
-      type,
-      distance: 0,
-    };
+    try {
+      setSavingOccurrence(true);
+      const token = await getStoredToken();
 
-    setOccurrences((currentOccurrences) => [newOccurrence, ...currentOccurrences]);
-    setActiveTab('gerais');
-    closeModal();
+      if (!token) {
+        Alert.alert('Login necessario', 'Entre na sua conta para registrar uma ocorrencia.');
+        return;
+      }
+
+      await api.post(
+        '/ocorrencias',
+        {
+          description: description.trim(),
+          location: location.trim(),
+          title: title.trim(),
+        },
+        token
+      );
+
+      await loadOccurrences();
+      setActiveTab('gerais');
+      closeModal();
+    } catch (error: any) {
+      console.error('Erro ao registrar ocorrencia:', error);
+      Alert.alert('Erro', error.message || 'Nao foi possivel registrar a ocorrencia.');
+    } finally {
+      setSavingOccurrence(false);
+    }
   };
 
   const FilterChip = ({ label, value }: { label: string; value: number }) => (
@@ -182,7 +308,12 @@ export default function Ocorrencias() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.listContainer}>
-        {filteredOccurrences.length > 0 ? (
+        {loadingOccurrences ? (
+          <View style={styles.emptyContainer}>
+            <ActivityIndicator color={colors.primary} />
+            <Text style={styles.emptyText}>Carregando ocorrencias...</Text>
+          </View>
+        ) : filteredOccurrences.length > 0 ? (
           filteredOccurrences.map((item) => (
             <View key={item.id} style={styles.occurrenceCard}>
               <View style={styles.occurrenceIconBox}>
@@ -206,16 +337,11 @@ export default function Ocorrencias() {
 
                 <View style={styles.distanceBadge}>
                   <MaterialCommunityIcons
-                    name="map-marker-distance"
+                    name="map-marker-outline"
                     size={12}
                     color={colors.primary}
                   />
-                  <Text style={styles.distanceText}>
-                    {item.distance >= 1000
-                      ? `${(item.distance / 1000).toFixed(1)}km`
-                      : `${item.distance}m`}{' '}
-                    de distancia
-                  </Text>
+                  <Text style={styles.distanceText}>{item.location}</Text>
                 </View>
               </View>
             </View>
@@ -227,7 +353,9 @@ export default function Ocorrencias() {
               size={60}
               color={isDarkMode ? '#333' : '#EFEFEF'}
             />
-            <Text style={styles.emptyText}>Nenhuma ocorrencia neste raio.</Text>
+            <Text style={styles.emptyText}>
+              {loadError || 'Nenhuma ocorrencia neste raio.'}
+            </Text>
           </View>
         )}
       </ScrollView>
@@ -284,6 +412,16 @@ export default function Ocorrencias() {
               maxLength={40}
             />
 
+            <Text style={styles.inputLabel}>Bairro/local</Text>
+            <TextInput
+              style={styles.input}
+              value={location}
+              onChangeText={setLocation}
+              placeholder="Ex: Centro, Meireles, Aldeota"
+              placeholderTextColor="#A39EAE"
+              maxLength={60}
+            />
+
             <Text style={styles.inputLabel}>Descricao</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
@@ -302,8 +440,14 @@ export default function Ocorrencias() {
               onPress={handleRegisterOccurrence}
               disabled={!canSave}
             >
-              <MaterialIcons name="check-circle" size={22} color="#FFF" />
-              <Text style={styles.saveButtonText}>Salvar ocorrencia</Text>
+              {savingOccurrence ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <MaterialIcons name="check-circle" size={22} color="#FFF" />
+              )}
+              <Text style={styles.saveButtonText}>
+                {savingOccurrence ? 'Salvando...' : 'Salvar ocorrencia'}
+              </Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
