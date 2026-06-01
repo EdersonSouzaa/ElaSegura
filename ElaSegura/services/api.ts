@@ -1,10 +1,33 @@
 import Constants from 'expo-constants';
-
-// Em desenvolvimento, o localhost funciona no navegador, 
-// mas no celular físico/emulador você precisa do IP da máquina.
-// O endereço abaixo é o IP detectado na sua máquina.
 import { Platform } from 'react-native';
-const API_URL = process.env.EXPO_PUBLIC_API_URL || (Platform.OS === 'web' ? 'http://localhost:3000' : 'http://10.0.1.108:3000');
+
+const getServerPort = () => {
+  return Constants.expoConfig?.extra?.serverPort || '3000';
+};
+
+const getApiUrl = () => {
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
+  }
+
+  const port = getServerPort();
+
+  if (Platform.OS === 'web') {
+    return `http://localhost:${port}`;
+  }
+
+  // Get the debugger/metro host IP dynamically
+  const hostUri = Constants.expoConfig?.hostUri;
+  if (hostUri) {
+    const ip = hostUri.split(':')[0];
+    return `http://${ip}:${port}`;
+  }
+
+  return `http://localhost:${port}`;
+};
+
+const API_URL = getApiUrl();
+console.log('[API] URL resolvida dinamicamente:', API_URL);
 
 export const api = {
   async post(endpoint: string, data: any, token?: string) {
