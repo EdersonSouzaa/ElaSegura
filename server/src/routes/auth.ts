@@ -5,6 +5,10 @@ import { query } from '../db.js';
 
 const router = Router();
 
+// Função auxiliar de validação (O Segurança)
+const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const isValidPassword = (password: string) => password.length >= 6 && password.length <= 20;
+
 // Register
 router.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
@@ -13,25 +17,28 @@ router.post('/register', async (req, res) => {
     return res.status(400).json({ error: 'Name, email and password are required' });
   }
 
+  // Validações REGEX no Backend
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+  if (!isValidPassword(password)) {
+    return res.status(400).json({ error: 'Password must be between 6 and 20 characters' });
+  }
+
   try {
-    // Check if user exists
     const existingUser = await query('SELECT * FROM "user" WHERE email = $1', [email]);
     if (existingUser.rows.length > 0) {
       return res.status(400).json({ error: 'User already exists' });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Insert user
     const result = await query(
-      'INSERT INTO "user" (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email',
-      [name, email, hashedPassword]
+      'INSERT INTO "user" (name, email, password, notifications_enabled, location_enabled) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, profile_picture',
+      [name, email, hashedPassword, true, false]
     );
 
     const newUser = result.rows[0];
-
-    // Generate token
     const token = jwt.sign({ id: newUser.id }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
 
     res.status(201).json({ user: newUser, token });
@@ -49,26 +56,26 @@ router.post('/login', async (req, res) => {
     return res.status(400).json({ error: 'Email and password are required' });
   }
 
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+
   try {
-    // Find user
     const result = await query('SELECT * FROM "user" WHERE email = $1', [email]);
     if (result.rows.length === 0) {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
     const user = result.rows[0];
-
-    // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
-    // Generate token
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
 
     res.json({
-      user: { id: user.id, name: user.name, email: user.email },
+      user: { id: user.id, name: user.name, email: user.email, profile_picture: user.profile_picture },
       token
     });
   } catch (error) {
@@ -85,17 +92,20 @@ router.post('/reset-password', async (req, res) => {
     return res.status(400).json({ error: 'Email and new password are required' });
   }
 
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+  if (!isValidPassword(newPassword)) {
+    return res.status(400).json({ error: 'New password must be between 6 and 20 characters' });
+  }
+
   try {
-    // Check if user exists
     const result = await query('SELECT * FROM "user" WHERE email = $1', [email]);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    // Update password
     await query('UPDATE "user" SET password = $1 WHERE email = $2', [hashedPassword, email]);
 
     res.json({ message: 'Password updated successfully' });

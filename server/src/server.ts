@@ -7,6 +7,7 @@ import alertasRoutes from './routes/alertas.js';
 import ocorrenciaRoutes from './routes/ocorrencias.js';
 import contatoRoutes from './routes/contatos.js';
 import sosRoutes from './routes/sos.js';
+import userRoutes from './routes/user.js';
 
 dotenv.config();
 
@@ -14,7 +15,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // Routes
 app.use('/auth', authRoutes);
@@ -22,6 +23,7 @@ app.use('/alertas', alertasRoutes);
 app.use('/ocorrencias', ocorrenciaRoutes);
 app.use('/contatos', contatoRoutes);
 app.use('/sos', sosRoutes);
+app.use('/user', userRoutes);
 
 // Health check
 app.get('/', (req, res) => {
