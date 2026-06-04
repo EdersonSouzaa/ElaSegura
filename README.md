@@ -1,4 +1,4 @@
-# ElaSegura - Execution Guide
+# ElaSegura
 
 ElaSegura is a university extension project developed to protect women through a collaborative safety mobile application, offering a real-time SOS alert system for trusted contacts and a crowd-sourced mapping tool to flag high-risk areas. The project consists of a React Native mobile application (Frontend) and an Express API server (Backend) powered by a local PostgreSQL database.
 
