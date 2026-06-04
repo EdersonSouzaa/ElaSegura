@@ -162,7 +162,6 @@ export default function Perfil() {
             }
           </TouchableOpacity>
 
-<<<<<<< HEAD
           <TouchableOpacity
             style={styles.logoutButton}
             activeOpacity={0.7}
@@ -171,11 +170,7 @@ export default function Perfil() {
               router.replace('/login');
             }}
           >
-            <MaterialCommunityIcons name="logout" size={20} color={colors.primary} />
-=======
-          <TouchableOpacity style={styles.logoutButton} activeOpacity={0.7}>
             <MaterialCommunityIcons name="logout" size={24} color={colors.primary} />
->>>>>>> 825f13121a140c02c90bd695a3f4b1dbd851285a
             <Text style={styles.logoutText}>Sair da conta</Text>
           </TouchableOpacity>
         </View>

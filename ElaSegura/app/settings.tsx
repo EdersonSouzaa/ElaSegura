@@ -28,6 +28,7 @@ export default function Settings() {
   // Navegação interna na aba de configurações
   const [currentSubScreen, setCurrentSubScreen] = useState<'main' | 'security'>('main');
   const [faqModalVisible, setFaqModalVisible] = useState(false);
+  const [vocesabiaModalVisible, setVocesabiaModalVisible] = useState(false);
 
   // Preferências do usuário
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(true);
@@ -614,6 +615,16 @@ export default function Settings() {
           />
         </Section>
 
+        <Section title="Dicas e Utilidade Pública">
+          <SettingItem
+            icon="lightbulb-on-outline"
+            title="Você Sabia?"
+            subtitle="Dicas, leis e contatos de apoio gratuito"
+            onPress={() => setVocesabiaModalVisible(true)}
+            isLast
+          />
+        </Section>
+
         <Section title="Suporte">
           <SettingItem
             icon="help-circle-outline"
@@ -698,6 +709,80 @@ export default function Settings() {
               onPress={() => setFaqModalVisible(false)}
             >
               <Text style={styles.closeButtonText}>Entendido</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal Você Sabia? */}
+      <Modal
+        visible={vocesabiaModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setVocesabiaModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContainer, { backgroundColor: colors.cardBg }]}>
+            <View style={styles.modalHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <MaterialCommunityIcons name="lightbulb-on" size={24} color={colors.primary} />
+                <Text style={[styles.modalTitle, { color: colors.text }]}>Você Sabia?</Text>
+              </View>
+              <TouchableOpacity onPress={() => setVocesabiaModalVisible(false)}>
+                <MaterialCommunityIcons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={styles.faqScroll}>
+              <Text style={{ fontSize: 13, color: colors.subtitle, marginBottom: 15, lineHeight: 18 }}>
+                Confira dicas rápidas semanais de segurança, direitos da mulher e canais de apoio gratuito.
+              </Text>
+
+              {/* Dica 1: Lei Maria da Penha */}
+              <View style={styles.faqItem}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                  <MaterialCommunityIcons name="scale-balance" size={20} color={colors.primary} />
+                  <Text style={[styles.faqQuestion, { color: colors.primary, marginBottom: 0 }]}>Lei Maria da Penha (Lei 11.340)</Text>
+                </View>
+                <Text style={[styles.faqAnswer, { color: colors.text }]}>
+                  Ela protege mulheres contra violência doméstica e familiar. Existem 5 formas de violência definidas pela lei: física, psicológica (humilhações, controle), sexual, patrimonial (reter dinheiro/bens) e moral (calúnia/difamação).
+                </Text>
+              </View>
+
+              {/* Dica 2: Assédio no Transporte */}
+              <View style={styles.faqItem}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                  <MaterialCommunityIcons name="bus-alert" size={20} color={colors.primary} />
+                  <Text style={[styles.faqQuestion, { color: colors.primary, marginBottom: 0 }]}>Assédio no Transporte Público</Text>
+                </View>
+                <Text style={[styles.faqAnswer, { color: colors.text }]}>
+                  Importunação sexual é crime (Lei 13.718). Se acontecer com você ou com outra pessoa, denuncie imediatamente ao motorista, grite para expor o agressor e chame o 190. Tente anotar a linha e o número do veículo para facilitar o boletim de ocorrência.
+                </Text>
+              </View>
+
+              {/* Dica 3: Canais de Apoio Gratuito */}
+              <View style={styles.faqItem}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                  <MaterialCommunityIcons name="heart-pulse" size={20} color={colors.primary} />
+                  <Text style={[styles.faqQuestion, { color: colors.primary, marginBottom: 0 }]}>Canais de Apoio Gratuito</Text>
+                </View>
+                <Text style={[styles.faqAnswer, { color: colors.text, fontWeight: 'bold', marginBottom: 4 }]}>
+                  📞 Ligue 180 — Central de Atendimento à Mulher (24h, gratuito e confidencial).
+                </Text>
+                <Text style={[styles.faqAnswer, { color: colors.text, marginBottom: 4 }]}>
+                  ⚖️ Defensoria Pública (NUDEM): Oferece orientação e defesa jurídica gratuita para mulheres vítimas de violência.
+                </Text>
+                <Text style={[styles.faqAnswer, { color: colors.text }]}>
+                  🧠 Apoio Psicológico Social: Diversas universidades públicas e clínicas sociais oferecem psicoterapia gratuita de forma online ou presencial.
+                </Text>
+              </View>
+            </ScrollView>
+
+            <TouchableOpacity
+              style={[styles.closeButton, { backgroundColor: colors.primary }]}
+              onPress={() => setVocesabiaModalVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>Fechar</Text>
             </TouchableOpacity>
           </View>
         </View>

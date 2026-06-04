@@ -25,7 +25,8 @@ router.get('/', authenticateToken, async (_req: any, res: Response) => {
           s.location,
           s.created_at,
           u.id AS user_id,
-          u.name AS user_name
+          u.name AS user_name,
+          'error' AS type
         FROM "SOS" s
         INNER JOIN "user" u ON u.id = s.user_id
 
@@ -39,7 +40,8 @@ router.get('/', authenticateToken, async (_req: any, res: Response) => {
           o.location,
           o.created_at,
           u.id AS user_id,
-          u.name AS user_name
+          u.name AS user_name,
+          o.type
         FROM "ocorrencia" o
         INNER JOIN "user" u ON u.id = o.user_id
       ) AS alert_feed

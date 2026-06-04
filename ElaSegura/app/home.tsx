@@ -11,7 +11,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { getStyles } from '../styles/home.styles';
 import { useRouter } from 'expo-router';
@@ -32,6 +32,7 @@ const Areas_image = require('../assets/images/areas.png');
 
 const Home = () => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { isDarkMode, theme } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
   const [locationPopupVisible, setLocationPopupVisible] = useState(false);
@@ -81,14 +82,14 @@ const Home = () => {
       const token = await AsyncStorage.getItem('userToken');
       if (token) {
         const data = await api.get('/alertas', token);
-        setOccurrences(data.alerts || []);
+        const occurrencesOnly = (data.alerts || []).filter((item: any) => item.source === 'ocorrencia');
+        setOccurrences(occurrencesOnly);
       }
     } catch (error) {
       console.error('Erro ao carregar alertas:', error);
     }
   }, []);
 
-<<<<<<< HEAD
   const formatAlertTime = (iso: string) => {
     if (!iso) return '';
     const d = new Date(iso);
@@ -96,12 +97,11 @@ const Home = () => {
     const time = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     return `${day}, ${time}`;
   };
-=======
+
   // Áreas marcadas no mapa (feat #71) — exibidas também no preview da home
   const loadMarked = useCallback(async () => {
     setMarkedZones(await loadMarkedZones());
   }, []);
->>>>>>> 825f13121a140c02c90bd695a3f4b1dbd851285a
 
   // --- EFEITO DE FOCO (Unificado em um único hook) ---
 
@@ -109,14 +109,9 @@ const Home = () => {
     useCallback(() => {
       loadUserData();
       loadLocationPreference();
-<<<<<<< HEAD
       loadAlerts();
-    }, [loadUserData, loadLocationPreference, loadAlerts])
-=======
-      loadOccurrences();
       loadMarked();
-    }, [loadUserData, loadLocationPreference, loadOccurrences, loadMarked])
->>>>>>> 825f13121a140c02c90bd695a3f4b1dbd851285a
+    }, [loadUserData, loadLocationPreference, loadAlerts, loadMarked])
   );
 
   return (
@@ -149,7 +144,7 @@ const Home = () => {
           </View>
         </View>
 
-        <View style={styles.content}>
+        <View style={[styles.content, { paddingBottom: 100 + insets.bottom }]}>
           {/* Mapa em tempo real (preview) */}
           <TouchableOpacity
             activeOpacity={0.9}
@@ -251,7 +246,7 @@ const Home = () => {
       </ScrollView>
 
       {/* Barra de Navegação Inferior */}
-      <View style={styles.bottomNav}>
+      <View style={[styles.bottomNav, { paddingBottom: Math.max(insets.bottom, 15) }]}>
         <NavItem active icon={<MaterialIcons name="home" size={28} color={colors.primary} />} label="Início" styles={styles} />
         <NavItem icon={<MaterialCommunityIcons name="alert-outline" size={28} color={colors.secondary} />} label="Ocorrencias" onPress={() => router.push('/ocorrencias')} styles={styles} />
         <NavItem icon={<MaterialCommunityIcons name="account-plus-outline" size={28} color={colors.secondary} />} label="Contatos" onPress={() => router.push('/contatos')} styles={styles} />

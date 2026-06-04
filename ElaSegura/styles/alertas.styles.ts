@@ -72,4 +72,59 @@ export const getStyles = (isDarkMode: boolean, colors: any) => StyleSheet.create
     textAlign: 'center',
     lineHeight: 22,
   },
+  scrollView: {
+    flex: 1,
+  },
+  listContainer: {
+    padding: 20,
+    gap: 15,
+  },
+  alertCard: {
+    backgroundColor: colors.cardBackground,
+    borderRadius: 25,
+    padding: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+  },
+  alertIconBox: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: isDarkMode ? colors.accent : '#FFF0F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  alertContent: {
+    flex: 1,
+  },
+  alertTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  alertDescription: {
+    fontSize: 13,
+    color: colors.secondary,
+    marginTop: 2,
+  },
+  alertTimeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    gap: 4,
+  },
+  alertTime: {
+    fontSize: 11,
+    color: colors.secondary,
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
