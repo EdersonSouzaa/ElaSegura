@@ -156,7 +156,7 @@ export default function Notepad() {
         <View style={styles.editBody}>
           <TextInput
             style={styles.noteTitle}
-            placeholder="Título"
+            placeholder="Título..."
             placeholderTextColor="#C7C7CC"
             value={activeNote.title}
             onChangeText={text => setActiveNote({ ...activeNote, title: text })}
@@ -166,7 +166,7 @@ export default function Notepad() {
           <View style={styles.divider} />
           <TextInput
             style={styles.noteBody}
-            placeholder="Nota"
+            placeholder="Escreva sua nota..."
             placeholderTextColor="#C7C7CC"
             value={activeNote.body}
             onChangeText={text => setActiveNote({ ...activeNote, body: text })}
@@ -217,8 +217,8 @@ export default function Notepad() {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <MaterialCommunityIcons name="note-outline" size={56} color="#C7C7CC" />
-            <Text style={styles.emptyText}>Sem Notas</Text>
-            <Text style={styles.emptySubtext}>Toque no lápis para adicionar</Text>
+            <Text style={styles.emptyText}>Nenhuma nota</Text>
+            <Text style={styles.emptySubtext}>Toque no lápis para adicionar uma nota</Text>
           </View>
         }
       />

@@ -165,7 +165,7 @@ export default function Contatos() {
           setModalVisible(true);
         }}
       >
-        <Text style={styles.addButtonText}>+ Adicionar contato</Text>
+        <Text style={styles.addButtonText}>+ Adicionar Contato</Text>
       </TouchableOpacity>
 
       {loading ? (
@@ -233,7 +233,7 @@ export default function Contatos() {
             
             <TextInput
               style={styles.input}
-              placeholder="Nome do contato"
+              placeholder="Digite o nome do contato..."
               placeholderTextColor={colors.secondary}
               value={name}
               onChangeText={setName}
@@ -241,7 +241,7 @@ export default function Contatos() {
             
             <TextInput
               style={styles.input}
-              placeholder="Telefone"
+              placeholder="Digite o telefone..."
               placeholderTextColor={colors.secondary}
               value={phone}
               onChangeText={setPhone}
@@ -249,7 +249,7 @@ export default function Contatos() {
             />
 
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <Text style={{ color: colors.text, fontSize: 15 }}>Contato emergencial</Text>
+              <Text style={{ color: colors.text, fontSize: 15 }}>Contato Emergencial</Text>
               <Switch
                 value={emergencial}
                 onValueChange={setEmergencial}

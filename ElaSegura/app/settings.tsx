@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
+import { Colors } from '../constants/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../services/api';
 import * as Location from 'expo-location';
@@ -51,17 +52,19 @@ export default function Settings() {
   const [contacts, setContacts] = useState<any[]>([]);
   const [contactsLoading, setContactsLoading] = useState(false);
 
-  // Cores dinâmicas
+  // Cores centralizadas do tema
+  const { isDarkMode: _dm, theme } = useTheme();
+  const themeColors = Colors[theme];
   const colors = {
-    bg: isDarkMode ? '#121212' : '#F7D2F1',
-    cardBg: isDarkMode ? '#1E1E1E' : '#FFF',
-    text: isDarkMode ? '#FFFFFF' : '#1A1A1A',
-    subtitle: isDarkMode ? '#A0A0A0' : '#9C97AC',
-    primary: '#F35F74',
-    border: isDarkMode ? '#333333' : '#F0F0F0',
-    headerBg: isDarkMode ? '#121212' : '#F7D2F1',
-    iconBox: isDarkMode ? '#2D2D2D' : '#FFF5F6',
-    backBtnBg: isDarkMode ? '#2D2D2D' : '#FFF',
+    bg:        themeColors.background,
+    cardBg:    themeColors.cardBackground,
+    text:      themeColors.text,
+    subtitle:  themeColors.secondary,
+    primary:   themeColors.primary,
+    border:    themeColors.border,
+    headerBg:  themeColors.background,
+    iconBox:   themeColors.accent,
+    backBtnBg: themeColors.cardBackground,
   };
 
   // Carrega configurações iniciais
@@ -363,7 +366,7 @@ export default function Settings() {
                 <Text style={[styles.inputLabel, { color: colors.subtitle }]}>Senha Atual</Text>
                 <TextInput
                   style={[styles.inputField, { backgroundColor: isDarkMode ? '#2D2D2D' : '#FAFAFA', color: colors.text, borderColor: colors.border }]}
-                  placeholder="Digite sua senha atual"
+                  placeholder="Digite sua senha atual..."
                   placeholderTextColor={colors.subtitle}
                   secureTextEntry
                   value={currentPassword}
@@ -375,7 +378,7 @@ export default function Settings() {
                 <Text style={[styles.inputLabel, { color: colors.subtitle }]}>Nova Senha</Text>
                 <TextInput
                   style={[styles.inputField, { backgroundColor: isDarkMode ? '#2D2D2D' : '#FAFAFA', color: colors.text, borderColor: colors.border }]}
-                  placeholder="Digite a nova senha"
+                  placeholder="Digite a nova senha..."
                   placeholderTextColor={colors.subtitle}
                   secureTextEntry
                   value={newPassword}
@@ -387,7 +390,7 @@ export default function Settings() {
                 <Text style={[styles.inputLabel, { color: colors.subtitle }]}>Confirmar Nova Senha</Text>
                 <TextInput
                   style={[styles.inputField, { backgroundColor: isDarkMode ? '#2D2D2D' : '#FAFAFA', color: colors.text, borderColor: colors.border }]}
-                  placeholder="Confirme a nova senha"
+                  placeholder="Confirme a nova senha..."
                   placeholderTextColor={colors.subtitle}
                   secureTextEntry
                   value={confirmPassword}

@@ -20,15 +20,16 @@ export default function About() {
   const router = useRouter();
   const { isDarkMode, theme } = useTheme();
 
-  // Cores dinâmicas para esta tela
+  // Cores centralizadas do tema
+  const themeColors = Colors[theme];
   const colors = {
-    primary: '#F06292',
-    secondary: isDarkMode ? '#A0A0A0' : '#9C97AC',
-    background: isDarkMode ? '#121212' : '#FDEAF9',
-    card: isDarkMode ? '#1E1E1E' : '#FFFFFF',
-    text: isDarkMode ? '#FFFFFF' : '#212121',
-    purple: '#9575CD',
-    divider: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+    primary:    themeColors.primary,
+    secondary:  themeColors.secondary,
+    background: themeColors.background,
+    card:       themeColors.cardBackground,
+    text:       themeColors.text,
+    purple:     '#9575CD',
+    divider:    isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
   };
 
   const styles = getStyles(colors);

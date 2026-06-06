@@ -106,13 +106,13 @@ export default function Perfil() {
         </View>
 
         <View style={styles.formCard}>
-          <Text style={styles.sectionTitle}>Informações de perfil</Text>
+          <Text style={styles.sectionTitle}>Informações do Perfil</Text>
           
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Nome</Text>
             <TextInput 
               style={styles.input}
-              placeholder="Seu Nome"
+              placeholder="Digite seu nome..."
               placeholderTextColor={colors.secondary}
               value={userData.name}
               onChangeText={(text) => setUserData({...userData, name: text})}
@@ -120,12 +120,13 @@ export default function Perfil() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>E-mail</Text>
             <TextInput 
               style={styles.input}
-              placeholder="seu@email.com"
+              placeholder="Digite seu e-mail..."
               placeholderTextColor={colors.secondary}
               keyboardType="email-address"
+              autoCapitalize="none"
               value={userData.email}
               onChangeText={(text) => setUserData({...userData, email: text})}
             />

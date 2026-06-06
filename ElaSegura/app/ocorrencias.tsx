@@ -35,8 +35,8 @@ type Occurrence = {
 const initialOccurrences: Occurrence[] = [];
 
 const occurrenceTypes: { label: string; value: OccurrenceType; icon: keyof typeof MaterialIcons.glyphMap }[] = [
-  { label: 'Emergencia', value: 'error', icon: 'error' },
-  { label: 'Atencao', value: 'warning', icon: 'warning' },
+  { label: 'Emergência', value: 'error', icon: 'error' },
+  { label: 'Atenção', value: 'warning', icon: 'warning' },
 ];
 
 export default function Ocorrencias() {
@@ -206,9 +206,9 @@ const filteredOccurrences = useMemo(() => {
         </TouchableOpacity>
 
         <View>
-          <Text style={styles.headerTitle}>Ocorrencias</Text>
+          <Text style={styles.headerTitle}>Ocorrências</Text>
           <Text style={styles.headerSubtitle}>
-            {activeTab === 'proximas' ? 'Alertas perto de voce' : 'Historico da regiao'}
+            {activeTab === 'proximas' ? 'Alertas perto de você' : 'Histórico da região'}
           </Text>
         </View>
       </View>
@@ -219,7 +219,7 @@ const filteredOccurrences = useMemo(() => {
           onPress={() => setActiveTab('proximas')}
         >
           <Text style={[styles.tabText, activeTab === 'proximas' && styles.activeTabText]}>
-            Proximas
+            Próximas
           </Text>
         </TouchableOpacity>
 
@@ -271,7 +271,7 @@ const filteredOccurrences = useMemo(() => {
           onPress={() => setModalVisible(true)}
         >
           <MaterialIcons name="add-alert" size={24} color="#FFF" />
-          <Text style={styles.registerButtonText}>Nova ocorrencia</Text>
+          <Text style={styles.registerButtonText}>Nova ocorrência</Text>
         </TouchableOpacity>
       </View>
 
@@ -308,7 +308,7 @@ const filteredOccurrences = useMemo(() => {
                     {item.distance >= 1000
                       ? `${(item.distance / 1000).toFixed(1)}km`
                       : `${item.distance}m`}{' '}
-                    de distancia
+                    de distância
                   </Text>
                 </View>
               </View>
@@ -339,7 +339,7 @@ const filteredOccurrences = useMemo(() => {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <View>
-                <Text style={styles.modalTitle}>Registrar ocorrencia</Text>
+                <Text style={styles.modalTitle}>Registrar ocorrência</Text>
                 <Text style={styles.modalSubtitle}>Informe o que aconteceu</Text>
               </View>
 
@@ -373,7 +373,7 @@ const filteredOccurrences = useMemo(() => {
               })}
             </View>
 
-            <Text style={styles.inputLabel}>Distancia estimada</Text>
+            <Text style={styles.inputLabel}>Distância estimada</Text>
             <View style={{ marginBottom: 16 }}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
                 {[
@@ -395,22 +395,22 @@ const filteredOccurrences = useMemo(() => {
               </ScrollView>
             </View>
 
-            <Text style={styles.inputLabel}>Titulo</Text>
+            <Text style={styles.inputLabel}>Título</Text>
             <TextInput
               style={styles.input}
               value={title}
               onChangeText={setTitle}
-              placeholder="Ex: Assedio, roubo, suspeita"
+              placeholder="Ex: Assédio, roubo, suspeita..."
               placeholderTextColor="#A39EAE"
               maxLength={40}
             />
 
-            <Text style={styles.inputLabel}>Descricao</Text>
+            <Text style={styles.inputLabel}>Descrição</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               value={description}
               onChangeText={setDescription}
-              placeholder="Descreva a ocorrencia"
+              placeholder="Descreva a ocorrência..."
               placeholderTextColor="#A39EAE"
               multiline
               textAlignVertical="top"
@@ -424,7 +424,7 @@ const filteredOccurrences = useMemo(() => {
               disabled={!canSave}
             >
               <MaterialIcons name="check-circle" size={24} color="#FFF" />
-              <Text style={styles.saveButtonText}>Salvar ocorrencia</Text>
+              <Text style={styles.saveButtonText}>Salvar ocorrência</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>

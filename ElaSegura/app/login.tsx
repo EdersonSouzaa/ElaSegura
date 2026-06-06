@@ -129,7 +129,7 @@ export default function Login() {
               <MaterialCommunityIcons name="email-outline" size={24} color={colors.secondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="E-mail"
+                placeholder="Digite seu e-mail..."
                 placeholderTextColor={colors.secondary}
                 value={email}
                 onChangeText={setEmail}
@@ -142,7 +142,7 @@ export default function Login() {
               <MaterialCommunityIcons name="lock-outline" size={24} color={colors.secondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Senha"
+                placeholder="Digite sua senha..."
                 placeholderTextColor={colors.secondary}
                 value={password}
                 onChangeText={setPassword}
@@ -204,7 +204,7 @@ export default function Login() {
               <MaterialCommunityIcons name="lock-outline" size={24} color={colors.secondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.modalInput}
-                placeholder="Nova Senha"
+                placeholder="Digite a nova senha..."
                 placeholderTextColor={colors.secondary}
                 value={newPassword}
                 onChangeText={setNewPassword}
@@ -223,7 +223,7 @@ export default function Login() {
               <MaterialCommunityIcons name="lock-check-outline" size={24} color={colors.secondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.modalInput}
-                placeholder="Confirmar Nova Senha"
+                placeholder="Confirme a nova senha..."
                 placeholderTextColor={colors.secondary}
                 value={confirmNewPassword}
                 onChangeText={setConfirmNewPassword}
@@ -270,7 +270,7 @@ const getStyles = (isDarkMode: boolean, colors: any) => StyleSheet.create({
   brandTitle: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: isDarkMode ? colors.primary : '#FF1493',
+    color: colors.primary,
     marginBottom: 5,
   },
   brandSubtitle: {

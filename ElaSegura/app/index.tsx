@@ -101,7 +101,7 @@ export default function Index() {
               <MaterialCommunityIcons name="account-outline" size={24} color={colors.secondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Nome Completo"
+                placeholder="Digite seu nome completo..."
                 placeholderTextColor={colors.secondary}
                 value={name}
                 onChangeText={setName}
@@ -113,7 +113,7 @@ export default function Index() {
               <MaterialCommunityIcons name="email-outline" size={24} color={colors.secondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="E-mail"
+                placeholder="Digite seu e-mail..."
                 placeholderTextColor={colors.secondary}
                 value={email}
                 onChangeText={setEmail}
@@ -126,7 +126,7 @@ export default function Index() {
               <MaterialCommunityIcons name="lock-outline" size={24} color={colors.secondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Senha"
+                placeholder="Digite sua senha..."
                 placeholderTextColor={colors.secondary}
                 value={password}
                 onChangeText={setPassword}
@@ -145,7 +145,7 @@ export default function Index() {
               <MaterialCommunityIcons name="lock-check-outline" size={24} color={colors.secondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Confirmar Senha"
+                placeholder="Confirme sua senha..."
                 placeholderTextColor={colors.secondary}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
@@ -199,7 +199,7 @@ const getStyles = (isDarkMode: boolean, colors: any) => StyleSheet.create({
   brandTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: isDarkMode ? colors.primary : '#FF1493',
+    color: colors.primary,
     marginBottom: 5,
   },
   brandSubtitle: {
