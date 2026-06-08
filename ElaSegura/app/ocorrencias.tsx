@@ -53,6 +53,7 @@ export default function Ocorrencias() {
   const [description, setDescription] = useState('');
   const [type, setType] = useState<OccurrenceType>('error');
   const [distance, setDistance] = useState<number>(500);
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('Todos');
 
   useEffect(() => {
@@ -115,11 +116,12 @@ const filteredOccurrences = useMemo(() => {
     return result;
   }, [activeTab, occurrences, radiusFilter, categoryFilter]);
 
-  const resetForm = () => {
+    const resetForm = () => {
     setTitle('');
     setDescription('');
     setType('error');
     setDistance(500);
+    setSelectedCategory(''); 
   };
 
   const closeModal = () => {
@@ -348,29 +350,48 @@ const filteredOccurrences = useMemo(() => {
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.inputLabel}>Tipo</Text>
-            <View style={styles.typeSelector}>
-              {occurrenceTypes.map((item) => {
-                const isActive = item.value === type;
+            <Text style={styles.inputLabel}>Categoria da Ocorrência</Text>
+            <View style={{ marginBottom: 16 }}>
+              {['Assédio', 'Roubo', 'Suspeita', 'Outro'].map((cat) => {
+                const isChecked = selectedCategory === cat;
 
                 return (
                   <TouchableOpacity
-                    key={item.value}
-                    style={[styles.typeOption, isActive && styles.typeOptionActive]}
-                    activeOpacity={0.8}
-                    onPress={() => setType(item.value)}
+                    key={cat}
+                    style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      setSelectedCategory(cat);
+                      if (cat !== 'Outro') {
+                        setTitle(cat); // Se for as 3 principais, preenche o título sozinho
+                      } else {
+                        setTitle(''); // Se for 'Outro', limpa o título pra pessoa digitar
+                      }
+                    }}
                   >
-                    <MaterialIcons
-                      name={item.icon}
-                      size={20}
-                      color={isActive ? '#FFF' : colors.primary}
+                    <MaterialCommunityIcons
+                      name={isChecked ? "checkbox-marked" : "checkbox-blank-outline"}
+                      size={24}
+                      color={isChecked ? colors.primary : "#A39EAE"}
                     />
-                    <Text style={[styles.typeOptionText, isActive && styles.typeOptionTextActive]}>
-                      {item.label}
+                    <Text style={{ marginLeft: 10, fontSize: 16, color: colors.text }}>
+                      {cat}
                     </Text>
                   </TouchableOpacity>
                 );
               })}
+
+              {/* Mágica: Mostra o campo de digitar SÓ SE a caixinha "Outro" for marcada */}
+              {selectedCategory === 'Outro' && (
+                <TextInput
+                  style={[styles.input, { marginTop: 4 }]}
+                  value={title}
+                  onChangeText={setTitle}
+                  placeholder="Qual foi a ocorrência?"
+                  placeholderTextColor="#A39EAE"
+                  maxLength={40}
+                />
+              )}
             </View>
 
             <Text style={styles.inputLabel}>Distancia estimada</Text>
@@ -395,15 +416,22 @@ const filteredOccurrences = useMemo(() => {
               </ScrollView>
             </View>
 
-            <Text style={styles.inputLabel}>Titulo</Text>
-            <TextInput
-              style={styles.input}
-              value={title}
-              onChangeText={setTitle}
-              placeholder="Ex: Assedio, roubo, suspeita"
-              placeholderTextColor="#A39EAE"
-              maxLength={40}
-            />
+            <Text style={styles.inputLabel}>Categoria da Ocorrência (Título)</Text>
+            <View style={{ marginBottom: 16 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
+                {['Assédio', 'Roubo', 'Suspeita', 'Outro'].map((cat) => (
+                  <TouchableOpacity
+                    key={cat}
+                    style={[styles.filterChip, title === cat && styles.activeFilterChip]}
+                    onPress={() => setTitle(cat)}
+                  >
+                    <Text style={[styles.filterChipText, title === cat && styles.activeFilterChipText]}>
+                      {cat}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
 
             <Text style={styles.inputLabel}>Descricao</Text>
             <TextInput
