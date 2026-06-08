@@ -4,15 +4,16 @@ import { authenticateToken } from './ocorrencias.js';
 
 const router = Router();
 
-router.get('/', authenticateToken, async (_req: any, res: Response) => {
+router.get('/', authenticateToken, async (req: any, res: Response) => {
+  const userId = req.user.id;
   try {
     const summaryResult = await query(`
       SELECT
-        (SELECT COUNT(*)::int FROM "SOS" WHERE created_at >= NOW() - INTERVAL '24 hours') AS sos_last_24h,
-        (SELECT COUNT(*)::int FROM "ocorrencia" WHERE created_at >= NOW() - INTERVAL '24 hours') AS ocorrencias_last_24h,
-        (SELECT COUNT(*)::int FROM "SOS") AS sos_total,
-        (SELECT COUNT(*)::int FROM "ocorrencia") AS ocorrencias_total
-    `);
+        (SELECT COUNT(*)::int FROM "SOS" WHERE user_id = $1 AND created_at >= NOW() - INTERVAL '24 hours') AS sos_last_24h,
+        (SELECT COUNT(*)::int FROM "ocorrencia" WHERE user_id = $1 AND created_at >= NOW() - INTERVAL '24 hours') AS ocorrencias_last_24h,
+        (SELECT COUNT(*)::int FROM "SOS" WHERE user_id = $1) AS sos_total,
+        (SELECT COUNT(*)::int FROM "ocorrencia" WHERE user_id = $1) AS ocorrencias_total
+    `, [userId]);
 
     const feedResult = await query(`
       SELECT *
@@ -29,6 +30,7 @@ router.get('/', authenticateToken, async (_req: any, res: Response) => {
           'error' AS type
         FROM "SOS" s
         INNER JOIN "user" u ON u.id = s.user_id
+        WHERE s.user_id = $1
 
         UNION ALL
 
@@ -44,10 +46,11 @@ router.get('/', authenticateToken, async (_req: any, res: Response) => {
           o.type
         FROM "ocorrencia" o
         INNER JOIN "user" u ON u.id = o.user_id
+        WHERE o.user_id = $1
       ) AS alert_feed
       ORDER BY created_at DESC
       LIMIT 20
-    `);
+    `, [userId]);
 
     res.json({
       summary: summaryResult.rows[0],
