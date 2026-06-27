@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { initDb } from './db.js';
 import authRoutes from './routes/auth.js';
 import alertasRoutes from './routes/alertas.js';
@@ -9,7 +11,10 @@ import contatoRoutes from './routes/contatos.js';
 import sosRoutes from './routes/sos.js';
 import userRoutes from './routes/user.js';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const app = express();
 const port = process.env.PORT || 3000;

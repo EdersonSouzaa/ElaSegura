@@ -1,27 +1,28 @@
-import React, { useEffect } from 'react';
-import { Stack, useRouter } from 'expo-router';
+import React from 'react';
+import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ThemeProvider } from '@/context/ThemeContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ThemeProvider, useTheme } from '@/context/ThemeContext';
+import { ThemeProvider as NavigationThemeProvider, DefaultTheme, DarkTheme } from '@react-navigation/native';
 
 function RootLayoutContent() {
-  const router = useRouter();
+  const { isDarkMode } = useTheme();
 
-  useEffect(() => {
-    AsyncStorage.getItem('@camouflage_enabled').then(enabled => {
-      if (enabled === 'true') {
-        router.replace('/notepad');
-      }
-    });
-  }, []);
+  const customTheme = {
+    ...(isDarkMode ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(isDarkMode ? DarkTheme.colors : DefaultTheme.colors),
+      background: isDarkMode ? '#121212' : '#F7D2F1',
+    },
+  };
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
-      <Stack.Screen name="home" />
-      <Stack.Screen name="perfil" />
-      <Stack.Screen name="notepad" />
-    </Stack>
+    <NavigationThemeProvider value={customTheme}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="home" />
+        <Stack.Screen name="perfil" />
+      </Stack>
+    </NavigationThemeProvider>
   );
 }
 

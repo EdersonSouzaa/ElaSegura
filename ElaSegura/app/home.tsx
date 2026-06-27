@@ -70,6 +70,7 @@ const Home = () => {
         const userData = await api.get('/user/me', token);
         if (userData) {
           setLocationEnabled(userData.location_enabled || false);
+          await AsyncStorage.setItem('@notifications_enabled', String(userData.notifications_enabled));
         }
       }
     } catch (error) {

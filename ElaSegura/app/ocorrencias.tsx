@@ -19,6 +19,7 @@ import { router } from 'expo-router';
 import { Colors } from '../constants/theme';
 import { useTheme } from '../context/ThemeContext';
 import { getStyles } from '../styles/ocorrencias.styles';
+import { ToastNotification } from '../components/ToastNotification';
 
 type OccurrenceType = 'error' | 'warning';
 type TabType = 'gerais' | 'proximas';
@@ -55,6 +56,24 @@ export default function Ocorrencias() {
   const [distance, setDistance] = useState<number>(500);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('Todos');
+
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'danger'>('success');
+
+  const showToast = async (message: string, type: 'success' | 'danger') => {
+    try {
+      const isEnabledVal = await AsyncStorage.getItem('@notifications_enabled');
+      const notificationsEnabled = isEnabledVal === null ? true : isEnabledVal === 'true';
+      if (notificationsEnabled) {
+        setToastMessage(message);
+        setToastType(type);
+        setToastVisible(true);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -167,6 +186,7 @@ const filteredOccurrences = useMemo(() => {
     const updatedOccurrences = [newOccurrence, ...occurrences];
     setOccurrences(updatedOccurrences);
     saveOccurrences(updatedOccurrences);
+    showToast('Ocorrência registrada com sucesso! ⚠️', 'success');
 
     AsyncStorage.getItem('userToken').then(token => {
       if (!token) return;
@@ -457,6 +477,13 @@ const filteredOccurrences = useMemo(() => {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      <ToastNotification
+        visible={toastVisible}
+        message={toastMessage}
+        type={toastType}
+        onClose={() => setToastVisible(false)}
+      />
     </SafeAreaView>
   );
 }

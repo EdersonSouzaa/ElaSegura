@@ -20,6 +20,7 @@ import { useTheme } from '../context/ThemeContext';
 import { Colors } from '../constants/theme';
 import { api } from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ToastNotification } from '../components/ToastNotification';
 
 interface Contato {
   id: number;
@@ -40,6 +41,24 @@ export default function Contatos() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [emergencial, setEmergencial] = useState(false);
+
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'danger'>('success');
+
+  const showToast = async (message: string, type: 'success' | 'danger') => {
+    try {
+      const isEnabledVal = await AsyncStorage.getItem('@notifications_enabled');
+      const notificationsEnabled = isEnabledVal === null ? true : isEnabledVal === 'true';
+      if (notificationsEnabled) {
+        setToastMessage(message);
+        setToastType(type);
+        setToastVisible(true);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const contatosEmergenciais = contatos.filter(c => c.emergencial);
   const contatosNormais = contatos.filter(c => !c.emergencial);
@@ -76,6 +95,7 @@ export default function Contatos() {
         await api.put(`/contatos/${editingContato.id}`, { name, phone, emergencial }, token || undefined);
       } else {
         await api.post('/contatos', { name, phone, emergencial }, token || undefined);
+        showToast('Contato adicionado com sucesso! 💜', 'success');
       }
       setModalVisible(false);
       resetForm();
@@ -98,6 +118,7 @@ export default function Contatos() {
             try {
               const token = await AsyncStorage.getItem('userToken');
               await api.delete(`/contatos/${id}`, token || undefined);
+              showToast('Contato excluído com sucesso! 🗑️', 'danger');
               fetchContatos();
             } catch (error: any) {
               Alert.alert('Erro', 'Erro ao excluir contato.');
@@ -276,6 +297,13 @@ export default function Contatos() {
           </View>
         </View>
       </Modal>
+
+      <ToastNotification
+        visible={toastVisible}
+        message={toastMessage}
+        type={toastType}
+        onClose={() => setToastVisible(false)}
+      />
     </SafeAreaView>
   );
 }

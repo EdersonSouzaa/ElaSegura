@@ -8,6 +8,7 @@ import { useTheme } from '../context/ThemeContext';
 import { Colors } from '../constants/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../services/api';
+import { EmergencyCallSheet } from '../components/EmergencyCallSheet';
 
 const SOSScreen = () => {
   const router = useRouter();
@@ -20,6 +21,7 @@ const SOSScreen = () => {
   const [contatosNotificados, setContatosNotificados] = useState<any[]>([]);
   const [semContatos, setSemContatos] = useState(false);
   const [currentCoords, setCurrentCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [emergencyVisible, setEmergencyVisible] = useState(false);
 
   const formatPhoneForWhatsApp = (phone: string): string => {
     const cleaned = phone.replace(/\D/g, '');
@@ -149,6 +151,14 @@ const SOSScreen = () => {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#9C27B0', borderRadius: 16, paddingVertical: 14, marginTop: 12 }}
+            activeOpacity={0.85}
+            onPress={() => setEmergencyVisible(true)}
+          >
+            <MaterialCommunityIcons name="phone-alert" size={22} color="#FFFFFF" />
+            <Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 16, marginLeft: 8 }}>Ligar para emergência</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[styles.cancelButton, isLoading && { opacity: 0.5 }]}
             activeOpacity={0.7}
             onPress={() => router.back()}
@@ -225,6 +235,7 @@ const SOSScreen = () => {
           </View>
         </View>
       </Modal>
+      <EmergencyCallSheet visible={emergencyVisible} onClose={() => setEmergencyVisible(false)} />
     </SafeAreaView>
   );
 };

@@ -12,6 +12,8 @@ import {
   TextInput,
   Modal,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -35,11 +37,7 @@ export default function Settings() {
   const [isLocationEnabled, setIsLocationEnabled] = useState(false);
   const [alertRadius, setAlertRadius] = useState(5000);
 
-  // Biometria local
-  const [isBiometryEnabled, setIsBiometryEnabled] = useState(false);
 
-  // Modo camuflado
-  const [isCamouflageEnabled, setIsCamouflageEnabled] = useState(false);
 
   // Alterar Senha
   const [currentPassword, setCurrentPassword] = useState('');
@@ -52,17 +50,7 @@ export default function Settings() {
   const [contactsLoading, setContactsLoading] = useState(false);
 
   // Cores dinâmicas
-  const colors = {
-    bg: isDarkMode ? '#121212' : '#F7D2F1',
-    cardBg: isDarkMode ? '#1E1E1E' : '#FFF',
-    text: isDarkMode ? '#FFFFFF' : '#1A1A1A',
-    subtitle: isDarkMode ? '#A0A0A0' : '#9C97AC',
-    primary: '#F35F74',
-    border: isDarkMode ? '#333333' : '#F0F0F0',
-    headerBg: isDarkMode ? '#121212' : '#F7D2F1',
-    iconBox: isDarkMode ? '#2D2D2D' : '#FFF5F6',
-    backBtnBg: isDarkMode ? '#2D2D2D' : '#FFF',
-  };
+  const colors = useSettingsColors();
 
   // Carrega configurações iniciais
   useEffect(() => {
@@ -78,16 +66,12 @@ export default function Settings() {
       const userData = await api.get('/user/me', token);
       if (userData) {
         setIsNotificationsEnabled(userData.notifications_enabled);
+        await AsyncStorage.setItem('@notifications_enabled', String(userData.notifications_enabled));
         setIsLocationEnabled(userData.location_enabled);
         if (userData.alert_radius) setAlertRadius(userData.alert_radius);
       }
 
-      // Busca biometria salva localmente
-      const biometry = await AsyncStorage.getItem('isBiometryEnabled');
-      if (biometry !== null) setIsBiometryEnabled(biometry === 'true');
 
-      const camouflage = await AsyncStorage.getItem('@camouflage_enabled');
-      if (camouflage !== null) setIsCamouflageEnabled(camouflage === 'true');
     } catch (error) {
       console.error('Erro ao carregar configurações do usuário:', error);
     }
@@ -104,6 +88,7 @@ export default function Settings() {
         notifications_enabled: value,
         location_enabled: isLocationEnabled
       }, token);
+      await AsyncStorage.setItem('@notifications_enabled', String(value));
     } catch (error) {
       console.error('Erro ao salvar preferência de notificação:', error);
       Alert.alert('Erro', 'Não foi possível atualizar a preferência de notificações.');
@@ -154,15 +139,7 @@ export default function Settings() {
     }
   };
 
-  // Atualiza preferência de biometria
-  const handleToggleBiometry = async (value: boolean) => {
-    setIsBiometryEnabled(value);
-    try {
-      await AsyncStorage.setItem('isBiometryEnabled', String(value));
-    } catch (error) {
-      console.error('Erro ao salvar preferência de biometria:', error);
-    }
-  };
+
 
   // Busca lista de contatos para a tela de segurança
   const fetchContacts = async () => {
@@ -235,6 +212,8 @@ export default function Settings() {
         newPassword
       }, token);
 
+      await AsyncStorage.setItem('userPassword', newPassword);
+
       Alert.alert('Sucesso', 'Senha atualizada com sucesso!');
       setCurrentPassword('');
       setNewPassword('');
@@ -247,77 +226,7 @@ export default function Settings() {
     }
   };
 
-  const SettingItem = ({ icon, title, subtitle, onPress, isLast, rightElement }: any) => (
-    <TouchableOpacity
-      style={[
-        styles.settingItem,
-        { borderBottomColor: colors.border },
-        isLast && styles.lastItem
-      ]}
-      onPress={onPress}
-      activeOpacity={0.7}
-      disabled={!onPress}
-    >
-      <View style={[styles.settingIconBox, { backgroundColor: colors.iconBox }]}>
-        <MaterialCommunityIcons name={icon} size={24} color={colors.primary} />
-      </View>
-      <View style={styles.settingTextContainer}>
-        <Text style={[styles.settingTitle, { color: colors.text }]}>{title}</Text>
-        {subtitle && <Text style={[styles.settingSubtitle, { color: colors.subtitle }]}>{subtitle}</Text>}
-      </View>
-      {rightElement ? rightElement : (
-        onPress && <MaterialCommunityIcons name="chevron-right" size={24} color={colors.subtitle} />
-      )}
-    </TouchableOpacity>
-  );
 
-  const Section = ({ title, children }: any) => (
-    <View style={styles.section}>
-      <Text style={[styles.sectionHeader, { color: colors.primary }]}>{title}</Text>
-      <View style={[styles.sectionContent, { backgroundColor: colors.cardBg }]}>
-        {children}
-      </View>
-    </View>
-  );
-
-  const MoonSwitch = () => {
-    const animatedValue = useRef(new Animated.Value(isDarkMode ? 1 : 0)).current;
-
-    useEffect(() => {
-      Animated.timing(animatedValue, {
-        toValue: isDarkMode ? 1 : 0,
-        duration: 300,
-        useNativeDriver: false,
-      }).start();
-    }, [isDarkMode]);
-
-    const translateX = animatedValue.interpolate({
-      inputRange: [0, 1],
-      outputRange: [2, 22],
-    });
-
-    const backgroundColor = animatedValue.interpolate({
-      inputRange: [0, 1],
-      outputRange: ['#D1D1D1', '#4D4D4D'],
-    });
-
-    return (
-      <TouchableOpacity
-        activeOpacity={0.8}
-        onPress={toggleTheme}
-      >
-        <Animated.View style={[styles.customSwitchContainer, { backgroundColor }]}>
-          <Animated.View style={[styles.customSwitchThumb, { transform: [{ translateX }] }]}>
-            <MaterialCommunityIcons
-              name={isDarkMode ? "moon-waning-crescent" : "white-balance-sunny"}
-              size={16}
-              color={isDarkMode ? "#FFD700" : "#FFA500"}
-            />
-          </Animated.View>
-        </Animated.View>
-      </TouchableOpacity>
-    );
-  };
 
   // Se o usuário selecionou a sub-tela de Segurança
   if (currentSubScreen === 'security') {
@@ -336,25 +245,17 @@ export default function Settings() {
           <Text style={[styles.headerTitle, { color: colors.text }]}>Segurança</Text>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
+        >
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+          >
 
-          {/* Biometria */}
-          <Section title="Acesso e Biometria">
-            <SettingItem
-              icon="fingerprint"
-              title="Acesso por Biometria"
-              subtitle="Desbloqueio rápido e seguro"
-              rightElement={
-                <Switch
-                  value={isBiometryEnabled}
-                  onValueChange={handleToggleBiometry}
-                  trackColor={{ false: '#D1D1D1', true: colors.primary }}
-                  thumbColor={'#FFF'}
-                />
-              }
-              isLast
-            />
-          </Section>
+
 
           {/* Alterar Senha */}
           <Section title="Alterar Senha">
@@ -468,7 +369,8 @@ export default function Settings() {
             )}
           </Section>
 
-        </ScrollView>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     );
   }
@@ -576,33 +478,6 @@ export default function Settings() {
               ))}
             </View>
           </View>
-        </Section>
-
-        <Section title="Modo Camuflado">
-          <SettingItem
-            icon="incognito"
-            title="Disfarçar como Bloco de Notas"
-            subtitle={isCamouflageEnabled ? 'Ativo — app abre como Notas' : 'Desativado'}
-            rightElement={
-              <Switch
-                value={isCamouflageEnabled}
-                onValueChange={async (value) => {
-                  setIsCamouflageEnabled(value);
-                  await AsyncStorage.setItem('@camouflage_enabled', String(value));
-                  if (value) {
-                    Alert.alert(
-                      'Modo Camuflado Ativado',
-                      'O app agora abre como um Bloco de Notas. Para acessar o ElaSegura, toque no título "Notas" 5 vezes seguidas.',
-                      [{ text: 'Entendido' }]
-                    );
-                  }
-                }}
-                trackColor={{ false: '#D1D1D1', true: colors.primary }}
-                thumbColor={'#FFF'}
-              />
-            }
-            isLast
-          />
         </Section>
 
         <Section title="Temas">
@@ -790,6 +665,100 @@ export default function Settings() {
     </SafeAreaView>
   );
 }
+
+const useSettingsColors = () => {
+  const { isDarkMode } = useTheme();
+  return {
+    bg: isDarkMode ? '#121212' : '#F7D2F1',
+    cardBg: isDarkMode ? '#1E1E1E' : '#FFF',
+    text: isDarkMode ? '#FFFFFF' : '#1A1A1A',
+    subtitle: isDarkMode ? '#A0A0A0' : '#9C97AC',
+    primary: '#F35F74',
+    border: isDarkMode ? '#333333' : '#F0F0F0',
+    headerBg: isDarkMode ? '#121212' : '#F7D2F1',
+    iconBox: isDarkMode ? '#2D2D2D' : '#FFF5F6',
+    backBtnBg: isDarkMode ? '#2D2D2D' : '#FFF',
+  };
+};
+
+const SettingItem = ({ icon, title, subtitle, onPress, isLast, rightElement }: any) => {
+  const colors = useSettingsColors();
+  return (
+    <TouchableOpacity
+      style={[
+        styles.settingItem,
+        { borderBottomColor: colors.border },
+        isLast && styles.lastItem
+      ]}
+      onPress={onPress}
+      activeOpacity={0.7}
+      disabled={!onPress}
+    >
+      <View style={[styles.settingIconBox, { backgroundColor: colors.iconBox }]}>
+        <MaterialCommunityIcons name={icon} size={24} color={colors.primary} />
+      </View>
+      <View style={styles.settingTextContainer}>
+        <Text style={[styles.settingTitle, { color: colors.text }]}>{title}</Text>
+        {subtitle && <Text style={[styles.settingSubtitle, { color: colors.subtitle }]}>{subtitle}</Text>}
+      </View>
+      {rightElement ? rightElement : (
+        onPress && <MaterialCommunityIcons name="chevron-right" size={24} color={colors.subtitle} />
+      )}
+    </TouchableOpacity>
+  );
+};
+
+const Section = ({ title, children }: any) => {
+  const colors = useSettingsColors();
+  return (
+    <View style={styles.section}>
+      <Text style={[styles.sectionHeader, { color: colors.primary }]}>{title}</Text>
+      <View style={[styles.sectionContent, { backgroundColor: colors.cardBg }]}>
+        {children}
+      </View>
+    </View>
+  );
+};
+
+const MoonSwitch = () => {
+  const { isDarkMode, toggleTheme } = useTheme();
+  const animatedValue = useRef(new Animated.Value(isDarkMode ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(animatedValue, {
+      toValue: isDarkMode ? 1 : 0,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  }, [isDarkMode]);
+
+  const translateX = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [2, 22],
+  });
+
+  const backgroundColor = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['#D1D1D1', '#4D4D4D'],
+  });
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.8}
+      onPress={toggleTheme}
+    >
+      <Animated.View style={[styles.customSwitchContainer, { backgroundColor }]}>
+        <Animated.View style={[styles.customSwitchThumb, { transform: [{ translateX }] }]}>
+          <MaterialCommunityIcons
+            name={isDarkMode ? "moon-waning-crescent" : "white-balance-sunny"}
+            size={16}
+            color={isDarkMode ? "#FFD700" : "#FFA500"}
+          />
+        </Animated.View>
+      </Animated.View>
+    </TouchableOpacity>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
