@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Fonts } from '../constants/globalFont';
 import {
   View,
@@ -19,7 +19,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { entrar, registrar, recuperarSenha, mensagemErroAuth } from '../services/auth';
+import { entrar, registrar, mensagemErroAuth } from '../services/auth';
+import {
+  enviarCodigoRedefinicao,
+  redefinirSenhaComCodigo,
+  mensagemErroRedefinicao,
+} from '../services/redefinicaoSenha';
 import { sincronizarSessao } from '../services/session';
 import { onboardingConcluido } from '../lib/preferencias';
 import { haptics } from '../lib/haptics';
@@ -38,7 +43,7 @@ type AuthTab = 'login' | 'cadastro';
 
 export default function Login() {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, idioma } = useI18n();
   const params = useLocalSearchParams<{ tab?: string }>();
 
   const [activeTab, setActiveTab] = useState<AuthTab>(params.tab === 'cadastro' ? 'cadastro' : 'login');
@@ -63,6 +68,22 @@ export default function Login() {
   const [resetEmail, setResetEmail] = useState('');
   const [isSendingReset, setIsSendingReset] = useState(false);
   const [isSuccessVisible, setIsSuccessVisible] = useState(false);
+  const [resetStep, setResetStep] = useState<'email' | 'codigo'>('email');
+  const [resetCode, setResetCode] = useState('');
+  const [resetNewPassword, setResetNewPassword] = useState('');
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('');
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetError, setResetError] = useState('');
+  const [resetInfo, setResetInfo] = useState('');
+  const [isSavingReset, setIsSavingReset] = useState(false);
+  // Segundos até poder pedir outro código (o servidor exige 1 minuto entre envios).
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown((s) => s - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
 
   const colors = LIGHT_COLORS;
   const { width } = useWindowDimensions();
@@ -142,29 +163,83 @@ export default function Login() {
     }
   };
 
-  const handleRecoverPassword = async () => {
+  const openResetModal = () => {
+    setResetEmail(email);
+    setResetStep('email');
+    setResetCode('');
+    setResetNewPassword('');
+    setResetConfirmPassword('');
+    setResetError('');
+    setResetInfo('');
+    setIsModalVisible(true);
+  };
+
+  const showResetError = (error: unknown) => {
+    haptics.erro();
+    const { chave, valores } = mensagemErroRedefinicao(error);
+    setResetError(t(chave, valores));
+  };
+
+  /** Passo 1 (e "reenviar"): pede um código de 6 dígitos para o e-mail. */
+  const handleSendResetCode = async (isResend = false) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    setResetError('');
+    setResetInfo('');
 
     if (!resetEmail) {
-      Alert.alert(t('comum.erro'), t('login.digiteEmailConta'));
+      setResetError(t('login.digiteEmailConta'));
       return;
     }
-    if (!emailRegex.test(resetEmail)) {
-      Alert.alert(t('comum.erro'), t('login.formatoEmailInvalido'));
+    if (!emailRegex.test(resetEmail.trim())) {
+      setResetError(t('login.formatoEmailInvalido'));
       return;
     }
 
     setIsSendingReset(true);
     try {
-      await recuperarSenha(resetEmail);
+      await enviarCodigoRedefinicao(resetEmail, idioma);
       haptics.sucesso();
-      setIsModalVisible(false);
-      setIsSuccessVisible(true);
-    } catch (error: any) {
-      haptics.erro();
-      Alert.alert(t('comum.erro'), mensagemErroAuth(error));
+      setResetStep('codigo');
+      setResetCode('');
+      setResendCooldown(60);
+      if (isResend) setResetInfo(t('redefinicaoSenha.codigoReenviado'));
+    } catch (error) {
+      showResetError(error);
     } finally {
       setIsSendingReset(false);
+    }
+  };
+
+  /** Passo 2: confere o código e grava a nova senha. */
+  const handleConfirmReset = async () => {
+    setResetError('');
+    setResetInfo('');
+
+    if (!/^\d{6}$/.test(resetCode.trim())) {
+      setResetError(t('redefinicaoSenha.digiteCodigo'));
+      return;
+    }
+    if (resetNewPassword.length < 6 || resetNewPassword.length > 20) {
+      setResetError(t('login.senhaTamanho'));
+      return;
+    }
+    if (resetNewPassword !== resetConfirmPassword) {
+      setResetError(t('login.senhasNaoCoincidem'));
+      return;
+    }
+
+    setIsSavingReset(true);
+    try {
+      await redefinirSenhaComCodigo(resetEmail, resetCode, resetNewPassword);
+      haptics.sucesso();
+      setIsModalVisible(false);
+      setEmail(resetEmail.trim());
+      setPassword('');
+      setIsSuccessVisible(true);
+    } catch (error) {
+      showResetError(error);
+    } finally {
+      setIsSavingReset(false);
     }
   };
 
@@ -176,8 +251,8 @@ export default function Login() {
 
       <SuccessPopup
         visible={isSuccessVisible}
-        title={t('login.emailEnviadoTitulo')}
-        message={t('login.emailEnviadoTexto')}
+        title={t('redefinicaoSenha.senhaAlteradaTitulo')}
+        message={t('redefinicaoSenha.senhaAlteradaTexto')}
         continueLabel={t('comum.continuar')}
         onContinue={() => setIsSuccessVisible(false)}
       />
@@ -284,8 +359,7 @@ export default function Login() {
                 style={styles.forgotPassword}
                 onPress={() => {
                   haptics.toque();
-                  setResetEmail(email);
-                  setIsModalVisible(true);
+                  openResetModal();
                 }}
                 accessibilityRole="button"
                 accessibilityLabel={t('login.esqueciSenha')}
@@ -429,35 +503,157 @@ export default function Login() {
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.modalDescription}>{t('login.redefinirDescricao')}</Text>
+            {resetStep === 'email' ? (
+              <>
+                <Text style={styles.modalDescription}>{t('redefinicaoSenha.descricaoEmail')}</Text>
 
-            <View style={styles.modalInputContainer}>
-              <MaterialCommunityIcons name="email-outline" size={24} color={colors.secondary} style={styles.inputIcon} />
-              <TextInput
-                style={styles.modalInput}
-                placeholder={t('login.emailPlaceholder')}
-                placeholderTextColor={colors.secondary}
-                value={resetEmail}
-                onChangeText={setResetEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                accessibilityLabel={t('login.email')}
-              />
-            </View>
+                <View style={styles.modalInputContainer}>
+                  <MaterialCommunityIcons name="email-outline" size={24} color={colors.secondary} style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder={t('login.emailPlaceholder')}
+                    placeholderTextColor={colors.secondary}
+                    value={resetEmail}
+                    onChangeText={setResetEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoComplete="email"
+                    accessibilityLabel={t('login.email')}
+                  />
+                </View>
 
-            <TouchableOpacity
-              style={[styles.modalButton, isSendingReset && { opacity: 0.6 }]}
-              onPress={handleRecoverPassword}
-              activeOpacity={0.8}
-              disabled={isSendingReset}
-              accessibilityRole="button"
-              accessibilityLabel={t('login.enviarLink')}
-              accessibilityState={{ disabled: isSendingReset, busy: isSendingReset }}
-            >
-              <Text style={styles.modalButtonText}>
-                {isSendingReset ? t('login.enviando') : t('login.enviarLink')}
-              </Text>
-            </TouchableOpacity>
+                {!!resetError && (
+                  <Text style={styles.errorText} accessibilityLiveRegion="polite">{resetError}</Text>
+                )}
+
+                <TouchableOpacity
+                  style={[styles.modalButton, isSendingReset && { opacity: 0.6 }]}
+                  onPress={() => handleSendResetCode()}
+                  activeOpacity={0.8}
+                  disabled={isSendingReset}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('redefinicaoSenha.enviarCodigo')}
+                  accessibilityState={{ disabled: isSendingReset, busy: isSendingReset }}
+                >
+                  <Text style={styles.modalButtonText}>
+                    {isSendingReset ? t('login.enviando') : t('redefinicaoSenha.enviarCodigo')}
+                  </Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={styles.modalDescription}>
+                  {t('redefinicaoSenha.descricaoCodigo', { email: resetEmail.trim() })}
+                </Text>
+
+                <View style={styles.modalInputContainer}>
+                  <MaterialCommunityIcons name="numeric" size={24} color={colors.secondary} style={styles.inputIcon} />
+                  <TextInput
+                    style={[styles.modalInput, styles.codeInput]}
+                    placeholder={t('redefinicaoSenha.codigoPlaceholder')}
+                    placeholderTextColor={colors.secondary}
+                    value={resetCode}
+                    onChangeText={(texto) => setResetCode(texto.replace(/\D/g, '').slice(0, 6))}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    autoComplete="one-time-code"
+                    textContentType="oneTimeCode"
+                    accessibilityLabel={t('redefinicaoSenha.codigo')}
+                  />
+                </View>
+
+                <View style={styles.modalInputContainer}>
+                  <MaterialCommunityIcons name="lock-outline" size={24} color={colors.secondary} style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder={t('redefinicaoSenha.novaSenha')}
+                    placeholderTextColor={colors.secondary}
+                    value={resetNewPassword}
+                    onChangeText={setResetNewPassword}
+                    secureTextEntry={!showResetPassword}
+                    autoCapitalize="none"
+                    autoComplete="new-password"
+                    textContentType="newPassword"
+                    maxLength={20}
+                    accessibilityLabel={t('redefinicaoSenha.novaSenha')}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowResetPassword((v) => !v)}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('redefinicaoSenha.novaSenha')}
+                  >
+                    <MaterialCommunityIcons
+                      name={showResetPassword ? 'eye-off-outline' : 'eye-outline'}
+                      size={22}
+                      color={colors.secondary}
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.modalInputContainer}>
+                  <MaterialCommunityIcons name="lock-check-outline" size={24} color={colors.secondary} style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder={t('redefinicaoSenha.confirmarNovaSenha')}
+                    placeholderTextColor={colors.secondary}
+                    value={resetConfirmPassword}
+                    onChangeText={setResetConfirmPassword}
+                    secureTextEntry={!showResetPassword}
+                    autoCapitalize="none"
+                    autoComplete="new-password"
+                    textContentType="newPassword"
+                    maxLength={20}
+                    accessibilityLabel={t('redefinicaoSenha.confirmarNovaSenha')}
+                  />
+                </View>
+
+                {!!resetError && (
+                  <Text style={styles.errorText} accessibilityLiveRegion="polite">{resetError}</Text>
+                )}
+                {!!resetInfo && !resetError && (
+                  <Text style={styles.infoText} accessibilityLiveRegion="polite">{resetInfo}</Text>
+                )}
+
+                <TouchableOpacity
+                  style={[styles.modalButton, isSavingReset && { opacity: 0.6 }]}
+                  onPress={handleConfirmReset}
+                  activeOpacity={0.8}
+                  disabled={isSavingReset}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('redefinicaoSenha.salvarSenha')}
+                  accessibilityState={{ disabled: isSavingReset, busy: isSavingReset }}
+                >
+                  <Text style={styles.modalButtonText}>
+                    {isSavingReset ? t('redefinicaoSenha.salvando') : t('redefinicaoSenha.salvarSenha')}
+                  </Text>
+                </TouchableOpacity>
+
+                <View style={styles.modalLinks}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setResetStep('email');
+                      setResetError('');
+                      setResetInfo('');
+                    }}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.modalLinkText}>{t('redefinicaoSenha.trocarEmail')}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => handleSendResetCode(true)}
+                    disabled={resendCooldown > 0 || isSendingReset}
+                    accessibilityRole="button"
+                    accessibilityState={{ disabled: resendCooldown > 0 || isSendingReset }}
+                  >
+                    <Text style={[styles.modalLinkText, (resendCooldown > 0 || isSendingReset) && { opacity: 0.5 }]}>
+                      {resendCooldown > 0
+                        ? t('redefinicaoSenha.reenviarEm', { segundos: resendCooldown })
+                        : t('redefinicaoSenha.reenviarCodigo')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
           </View>
         </View>
       </Modal>
@@ -665,6 +861,27 @@ const getStyles = (colors: any, logoSize: number) => StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  codeInput: {
+    fontSize: 20,
+    letterSpacing: 6,
+    fontWeight: 'bold',
+  },
+  infoText: {
+    color: colors.secondary,
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  modalLinks: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+  },
+  modalLinkText: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: '600',
   },
   errorText: {
     color: '#FF0000',

@@ -127,5 +127,15 @@ service cloud.firestore {
       // SOS e registro historico: nao se edita nem se apaga.
       allow update, delete: if false;
     }
+
+    // Codigos de redefinicao de senha e limites de envio. So as funcoes da
+    // Vercel (api/senha/*) mexem aqui, pelo Admin SDK, que ignora estas rules.
+    // O app nunca le nem escreve: o codigo nao pode vazar pelo cliente.
+    match /codigosRedefinicao/{id} {
+      allow read, write: if false;
+    }
+    match /limitesRedefinicao/{id} {
+      allow read, write: if false;
+    }
   }
 }
