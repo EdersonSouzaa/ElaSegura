@@ -1,5 +1,6 @@
 import { Platform, StyleSheet } from 'react-native';
 import { Fonts } from '../constants/globalFont';
+import { larguraModal } from '../constants/layout';
 
 export const getStyles = (isDarkMode: boolean, colors: any) =>
   StyleSheet.create({
@@ -118,8 +119,11 @@ export const getStyles = (isDarkMode: boolean, colors: any) =>
       backgroundColor: colors.cardBackground,
       borderRadius: 25,
       padding: 18,
-      flexDirection: 'row',
-      alignItems: 'center',
+      // Coluna: em cima a linha (ícone + textos + ações), embaixo a validação.
+      // Com 'row' aqui, a validação ficava ao lado do conteúdo e vazava do
+      // card na web.
+      flexDirection: 'column',
+      alignItems: 'stretch',
       marginBottom: 15,
       elevation: 3,
       shadowColor: '#000',
@@ -232,6 +236,7 @@ export const getStyles = (isDarkMode: boolean, colors: any) =>
       justifyContent: 'flex-end',
     },
     modalContent: {
+      ...larguraModal, // limita a largura na web (constants/layout.ts)
       backgroundColor: colors.cardBackground,
       borderTopLeftRadius: 28,
       borderTopRightRadius: 28,

@@ -37,6 +37,7 @@ import {
 } from '../lib/preferencias';
 import { obterPerfil, atualizarPreferencias, atualizarSenha } from '../services/usuario';
 import { listarContatos, atualizarContato } from '../services/contatos';
+import { larguraModal } from '../constants/layout';
 
 const RAIOS = [500, 1000, 2000, 5000, 10000];
 
@@ -1203,7 +1204,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   modalContainer: {
-    width: '100%',
+    ...larguraModal, // limita a largura na web (constants/layout.ts)
     maxHeight: '80%',
     borderRadius: 28,
     padding: 24,

@@ -31,6 +31,7 @@ import { haptics } from '../lib/haptics';
 import { useI18n } from '../context/I18nContext';
 import { SuccessPopup } from '../components/SuccessPopup';
 import { Colors } from '../constants/theme';
+import { larguraModal } from '../constants/layout';
 
 const LOGO_IMAGE = require('../assets/images/logo.png');
 
@@ -810,8 +811,8 @@ const getStyles = (colors: any, logoSize: number) => StyleSheet.create({
     padding: 20,
   },
   modalContent: {
+    ...larguraModal, // limita a largura na web (constants/layout.ts)
     backgroundColor: colors.cardBackground,
-    width: '100%',
     borderRadius: 30,
     padding: 24,
     elevation: 10,

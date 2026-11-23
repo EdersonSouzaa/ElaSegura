@@ -1,5 +1,6 @@
 import { StyleSheet, Platform } from 'react-native';
 import { Fonts } from '../constants/globalFont';
+import { larguraModal } from '../constants/layout';
 
 export const getStyles = (isDarkMode: boolean, colors: any) => StyleSheet.create({
   container: {
@@ -446,6 +447,7 @@ export const getStyles = (isDarkMode: boolean, colors: any) => StyleSheet.create
     justifyContent: 'flex-end',
   },
   modalContent: {
+    ...larguraModal, // limita a largura na web (constants/layout.ts)
     backgroundColor: colors.cardBackground,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
@@ -559,11 +561,11 @@ export const getStyles = (isDarkMode: boolean, colors: any) => StyleSheet.create
     padding: 30,
   },
   locationPopupContent: {
+    ...larguraModal, // limita a largura na web (constants/layout.ts)
     backgroundColor: colors.cardBackground,
     borderRadius: 30,
     padding: 30,
     alignItems: 'center',
-    width: '100%',
     elevation: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },

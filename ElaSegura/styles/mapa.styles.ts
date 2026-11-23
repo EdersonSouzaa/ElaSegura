@@ -1,5 +1,6 @@
 import { StyleSheet, Platform, StatusBar } from 'react-native';
 import { Fonts } from '../constants/globalFont';
+import { larguraModal } from '../constants/layout';
 
 export const getStyles = (isDarkMode: boolean, colors: any) => StyleSheet.create({
   container: {
@@ -210,6 +211,7 @@ export const getStyles = (isDarkMode: boolean, colors: any) => StyleSheet.create
     justifyContent: 'flex-end',
   },
   sheetContent: {
+    ...larguraModal, // limita a largura na web (constants/layout.ts)
     backgroundColor: colors.background,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
@@ -299,6 +301,7 @@ export const getStyles = (isDarkMode: boolean, colors: any) => StyleSheet.create
     justifyContent: 'flex-end',
   },
   modalContent: {
+    ...larguraModal, // limita a largura na web (constants/layout.ts)
     backgroundColor: colors.background,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,

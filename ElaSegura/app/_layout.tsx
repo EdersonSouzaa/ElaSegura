@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Platform, View } from 'react-native';
+import { LARGURA_MAXIMA_APP } from '@/constants/layout';
 import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -57,7 +59,7 @@ function RootLayoutContent() {
     },
   };
 
-  return (
+  const app = (
     <NavigationThemeProvider value={customTheme}>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
@@ -69,6 +71,28 @@ function RootLayoutContent() {
       </Stack>
       <OfflineBanner />
     </NavigationThemeProvider>
+  );
+
+  if (Platform.OS !== 'web') return app;
+
+  // Na web, o app fica numa coluna centralizada: em telas largas os cards e
+  // botões não esticam pela tela toda. Em telas até LARGURA_MAXIMA_APP a
+  // coluna ocupa 100% e nada muda.
+  return (
+    <View style={{ flex: 1, backgroundColor: isDarkMode ? '#0A0A0A' : '#F6DCE8' }}>
+      <View
+        style={{
+          flex: 1,
+          width: '100%',
+          maxWidth: LARGURA_MAXIMA_APP,
+          alignSelf: 'center',
+          overflow: 'hidden',
+          backgroundColor: customTheme.colors.background,
+        }}
+      >
+        {app}
+      </View>
+    </View>
   );
 }
 

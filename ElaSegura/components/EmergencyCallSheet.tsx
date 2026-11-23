@@ -5,6 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import { Colors } from '../constants/theme';
 import { EMERGENCY_NUMBERS, DEFAULT_EMERGENCY_NUMBER } from '../constants/emergencyNumbers';
 import { useI18n } from '../context/I18nContext';
+import { larguraModal } from '../constants/layout';
 
 type Props = {
   visible: boolean;
@@ -26,6 +27,7 @@ export const EmergencyCallSheet = ({ visible, onClose }: Props) => {
       <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
         <View
           style={{
+            ...larguraModal,
             backgroundColor: colors.cardBackground,
             borderTopLeftRadius: 24,
             borderTopRightRadius: 24,

@@ -441,7 +441,7 @@ export default function Ocorrencias() {
 
             return (
               <View key={item.id} style={styles.occurrenceCard}>
-                <View style={{ flexDirection: 'row' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <View style={styles.occurrenceIconBox}>
                     <MaterialIcons
                       name={item.type === 'error' ? 'error' : 'warning'}
