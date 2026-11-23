@@ -31,7 +31,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { obterPerfil, atualizarPerfil, atualizarFoto } from '../services/usuario';
 import { listarContatos } from '../services/contatos';
 import { obterAlertas } from '../services/alertas';
-import { sair } from '../services/auth';
+import { sair, mensagemErroAuth } from '../services/auth';
+import { avisar } from '../lib/alerta';
 import { limparSessao } from '../services/session';
 import { limparCache } from '../services/cacheOffline';
 import { auth } from '../services/firebase';
@@ -40,15 +41,6 @@ const formatMemberSince = (createdAt: string, locale: string) => {
   const date = new Date(createdAt);
   const label = date.toLocaleDateString(locale, { month: 'short', year: 'numeric' });
   return label.replace('.', '');
-};
-
-const formatProtectedDuration = (createdAt: string) => {
-  const start = new Date(createdAt).getTime();
-  const days = Math.max(0, Math.floor((Date.now() - start) / (1000 * 60 * 60 * 24)));
-  if (days < 30) return `${days}d`;
-  const months = Math.floor(days / 30);
-  if (months < 12) return `${months}m`;
-  return `${Math.floor(months / 12)}a`;
 };
 
 export default function Perfil() {
@@ -62,6 +54,7 @@ export default function Perfil() {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
+  const [editPassword, setEditPassword] = useState('');
   const [contatosCount, setContatosCount] = useState(0);
   const [alertasCount, setAlertasCount] = useState(0);
   const [logoutWidth, setLogoutWidth] = useState(0);
@@ -161,19 +154,56 @@ export default function Perfil() {
     haptics.toque();
     setEditName(userData.name);
     setEditEmail(userData.email);
+    setEditPassword('');
     setEditModalVisible(true);
+  };
+
+  /** A senha atual só é pedida quando o e-mail foi alterado. */
+  const emailFoiAlterado =
+    editEmail.trim().toLowerCase() !== (userData.email || '').trim().toLowerCase();
+
+  const mensagemErroPerfil = (error: any) => {
+    switch (error?.code) {
+      case 'app/senha-necessaria':
+        return t('perfil.senhaAtualObrigatoria');
+      case 'auth/wrong-password':
+      case 'auth/invalid-credential':
+      case 'auth/invalid-login-credentials':
+        return t('perfil.senhaIncorreta');
+      case 'auth/email-already-in-use':
+        return t('perfil.emailEmUso');
+      case 'auth/invalid-email':
+      case 'auth/invalid-new-email':
+        return t('perfil.emailInvalido');
+      default:
+        return error?.code ? mensagemErroAuth(error) : t('perfil.erroSalvar');
+    }
   };
 
   const handleSaveEdit = async () => {
     if (!editName.trim() || !editEmail.trim()) {
       haptics.aviso();
-      Alert.alert(t('comum.atencao'), t('perfil.camposObrigatorios'));
+      avisar(t('comum.atencao'), t('perfil.camposObrigatorios'));
+      return;
+    }
+    if (emailFoiAlterado && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editEmail.trim())) {
+      haptics.aviso();
+      avisar(t('comum.atencao'), t('perfil.emailInvalido'));
+      return;
+    }
+    if (emailFoiAlterado && !editPassword) {
+      haptics.aviso();
+      avisar(t('comum.atencao'), t('perfil.senhaAtualObrigatoria'));
       return;
     }
     haptics.acao();
     setIsSaving(true);
     try {
-      const updated = await atualizarPerfil(editName.trim(), editEmail.trim());
+      const updated = await atualizarPerfil(
+        editName.trim(),
+        editEmail.trim(),
+        emailFoiAlterado ? editPassword : undefined
+      );
       const savedUser = await AsyncStorage.getItem('user');
       if (savedUser) {
         const userObj = JSON.parse(savedUser);
@@ -181,19 +211,22 @@ export default function Perfil() {
       }
       setUserData((prev) => ({ ...prev, name: updated.name, email: updated.email }));
       setEditModalVisible(false);
+      setEditPassword('');
       haptics.sucesso();
 
       // O Firebase não troca o e-mail de login sem confirmação: ele envia um
       // link para o novo endereço e só efetiva depois do clique.
+      // avisar() em vez de Alert.alert: na web o Alert.alert não aparece, e
+      // a pessoa achava que o e-mail não tinha sido salvo.
       if (updated.emailPendenteConfirmacao) {
-        Alert.alert(
+        avisar(
           t('perfil.confirmeNovoEmail'),
           t('perfil.confirmeEmailTexto', { email: editEmail.trim() })
         );
       }
     } catch (error: any) {
       haptics.erro();
-      Alert.alert(t('comum.erro'), error.message || t('perfil.erroSalvar'));
+      avisar(t('comum.erro'), mensagemErroPerfil(error));
     } finally {
       setIsSaving(false);
     }
@@ -263,11 +296,6 @@ export default function Perfil() {
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{alertasCount}</Text>
             <Text style={styles.statLabel}>{t('perfil.alertas')}</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{userData.created_at ? formatProtectedDuration(userData.created_at) : '-'}</Text>
-            <Text style={styles.statLabel}>{t('perfil.protegida')}</Text>
           </View>
         </View>
 
@@ -423,6 +451,27 @@ export default function Perfil() {
                 accessibilityLabel={t('perfil.email')}
               />
             </View>
+
+            {emailFoiAlterado && (
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>{t('perfil.senhaAtual')}</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder={t('perfil.senhaAtualPlaceholder')}
+                  placeholderTextColor={colors.secondary}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoComplete="current-password"
+                  textContentType="password"
+                  value={editPassword}
+                  onChangeText={setEditPassword}
+                  accessibilityLabel={t('perfil.senhaAtual')}
+                />
+                <Text style={[styles.label, { marginTop: 6, fontWeight: '400' }]}>
+                  {t('perfil.senhaParaEmail')}
+                </Text>
+              </View>
+            )}
 
             <TouchableOpacity
               style={styles.saveButton}

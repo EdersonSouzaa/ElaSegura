@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { User } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from './firebase';
 
 /**
@@ -34,6 +34,11 @@ export async function sincronizarSessao(user: User) {
       const d = snap.data();
       nome = d.name ?? nome;
       foto = d.profilePictureUrl ?? null;
+      // Troca de e-mail confirmada pelo link: o Auth já tem o novo, o
+      // documento ainda tem o antigo. Atualiza no primeiro login depois disso.
+      if (user.email && d.email !== user.email) {
+        updateDoc(doc(db, 'usuarios', user.uid), { email: user.email }).catch(() => undefined);
+      }
     }
   } catch (e) {
     // Offline ou regra negando: seguimos com o que o Auth já tem em memória.

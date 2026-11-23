@@ -55,10 +55,18 @@ export async function obterPerfil(): Promise<UsuarioApp> {
   }
 
   const d = snap.data();
+
+  // O e-mail de verdade é o do Firebase Auth. Depois que a usuária confirma a
+  // troca pelo link, o Auth muda mas o documento continuava com o antigo, e o
+  // perfil mostrava o e-mail velho para sempre. Aqui o documento acompanha.
+  if (user.email && d.email !== user.email) {
+    updateDoc(refPerfil(user.uid), { email: user.email }).catch(() => undefined);
+  }
+
   return {
     id: user.uid,
     name: d.name ?? user.displayName ?? '',
-    email: d.email ?? user.email ?? '',
+    email: user.email ?? d.email ?? '',
     profile_picture: d.profilePictureUrl ?? null,
     notifications_enabled: d.notificationsEnabled ?? true,
     location_enabled: d.locationEnabled ?? false,
@@ -81,21 +89,35 @@ export type ResultadoAtualizarPerfil = {
  * link para o novo endereço e só efetiva depois do clique. Por isso o e-mail
  * retornado continua sendo o atual até a confirmação.
  */
-export async function atualizarPerfil(name: string, email: string): Promise<ResultadoAtualizarPerfil> {
+export async function atualizarPerfil(
+  name: string,
+  email: string,
+  senhaAtual?: string
+): Promise<ResultadoAtualizarPerfil> {
   const user = exigirUsuaria();
   const nomeLimpo = name.trim();
   const emailLimpo = email.trim();
+  const emailAtual = user.email ?? '';
+  const trocouEmail = !!emailLimpo && emailLimpo.toLowerCase() !== emailAtual.toLowerCase();
+
+  // A troca de e-mail vem ANTES de salvar o nome. Antes era o contrário: o
+  // nome salvava, a troca de e-mail falhava (o Firebase exige login recente,
+  // erro auth/requires-recent-login) e a tela parecia ter salvo só o nome.
+  if (trocouEmail) {
+    if (!senhaAtual) {
+      throw Object.assign(new Error('Senha atual necessária'), { code: 'app/senha-necessaria' });
+    }
+    // Reautentica com a senha atual: é o que evita o requires-recent-login.
+    await reauthenticateWithCredential(user, EmailAuthProvider.credential(emailAtual, senhaAtual));
+    await verifyBeforeUpdateEmail(user, emailLimpo);
+  }
 
   await updateDoc(refPerfil(user.uid), { name: nomeLimpo });
   await updateProfile(user, { displayName: nomeLimpo });
 
-  const emailAtual = user.email ?? '';
-  if (emailLimpo && emailLimpo.toLowerCase() !== emailAtual.toLowerCase()) {
-    await verifyBeforeUpdateEmail(user, emailLimpo);
-    return { name: nomeLimpo, email: emailAtual, emailPendenteConfirmacao: true };
-  }
-
-  return { name: nomeLimpo, email: emailAtual };
+  return trocouEmail
+    ? { name: nomeLimpo, email: emailAtual, emailPendenteConfirmacao: true }
+    : { name: nomeLimpo, email: emailAtual };
 }
 
 /**
