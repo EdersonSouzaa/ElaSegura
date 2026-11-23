@@ -32,7 +32,8 @@ import { obterAlertas } from '../services/alertas';
 import { listarContatos } from '../services/contatos';
 import { atualizarOcorrencia, excluirOcorrencia } from '../services/ocorrencias';
 import { acionarSos } from '../services/sos';
-import * as Location from 'expo-location';
+import { pedirPermissaoLocalizacao } from '../lib/localizacao';
+import { avisar } from '../lib/alerta';
 import Constants from 'expo-constants';
 import { FakeCallModal } from '../components/FakeCallModal';
 import { ToastNotification } from '../components/ToastNotification';
@@ -610,12 +611,19 @@ const Home = () => {
                 haptics.acao();
                 setLocationLoading(true);
                 try {
-                  const { status } = await Location.requestForegroundPermissionsAsync();
+                  const permissao = await pedirPermissaoLocalizacao();
 
-                  if (status !== 'granted') {
+                  if (permissao !== 'concedida') {
                     setLocationLoading(false);
                     haptics.aviso();
-                    Alert.alert(t('home.permissaoNegadaTitulo'), t('home.permissaoNegadaTexto'), [{ text: 'OK' }]);
+                    avisar(
+                      t('home.permissaoNegadaTitulo'),
+                      permissao === 'indisponivel'
+                        ? t('config.localizacaoIndisponivel')
+                        : Platform.OS === 'web'
+                          ? t('config.permissaoLocalizacaoWeb')
+                          : t('home.permissaoNegadaTexto')
+                    );
                     return;
                   }
 
@@ -626,7 +634,9 @@ const Home = () => {
                   setLocationPopupVisible(false);
                   haptics.sucesso();
 
-                  if (Constants.appOwnership !== 'expo') {
+                  // Na web o expo-notifications não agenda notificações locais (lança
+                  // erro), o que impedia de chegar ao mapa depois de ativar.
+                  if (Platform.OS !== 'web' && Constants.appOwnership !== 'expo') {
                     const Notifications = require('expo-notifications');
                     const { status: notifStatus } = await Notifications.getPermissionsAsync();
                     if (notifStatus !== 'granted') {
@@ -645,7 +655,7 @@ const Home = () => {
                 } catch (error) {
                   setLocationLoading(false);
                   haptics.erro();
-                  Alert.alert(t('comum.erro'), t('home.erroAtivarLocalizacao'));
+                  avisar(t('comum.erro'), t('home.erroAtivarLocalizacao'));
                 }
               }}
               activeOpacity={0.8}

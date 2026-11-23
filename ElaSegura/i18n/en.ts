@@ -519,6 +519,10 @@ export const en: Dicionario = {
     permissaoNecessaria: 'Permission required',
     permissaoLocalizacaoTexto:
       'To enable live location, you need to allow location access in your phone settings.',
+    permissaoLocalizacaoWeb:
+      'Your browser blocked location access. Click the lock icon next to the site address, allow location and try again.',
+    localizacaoIndisponivel:
+      'Location is not available in this browser. Use an up-to-date browser and open the site over https.',
     erroNotificacoes: 'We could not update your notification preference.',
     erroLocalizacao: 'We could not update your location preference.',
     erroRaio: 'We could not save the alert radius.',

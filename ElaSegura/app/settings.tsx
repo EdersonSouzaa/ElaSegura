@@ -21,7 +21,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
 import { useI18n } from '@/context/I18nContext';
-import * as Location from 'expo-location';
+import { pedirPermissaoLocalizacao } from '../lib/localizacao';
+import { avisar } from '../lib/alerta';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BackHomeButton } from '../components/BackHomeButton';
 import { haptics } from '../lib/haptics';
@@ -105,15 +106,21 @@ export default function Settings() {
     }
   };
 
+  const mensagemPermissaoLocalizacao = (permissao: 'negada' | 'indisponivel') => {
+    if (permissao === 'indisponivel') return t('config.localizacaoIndisponivel');
+    return Platform.OS === 'web' ? t('config.permissaoLocalizacaoWeb') : t('config.permissaoLocalizacaoTexto');
+  };
+
   const handleToggleLocation = async (value: boolean) => {
     haptics.selecao();
 
-    // Ativando: a permissão nativa vem antes — sem ela o toggle seria uma
-    // promessa que o app não consegue cumprir.
+    // Ativando: a permissão vem antes — sem ela o toggle seria uma
+    // promessa que o app não consegue cumprir. Funciona no celular e na web.
     if (value) {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert(t('config.permissaoNecessaria'), t('config.permissaoLocalizacaoTexto'), [{ text: 'OK' }]);
+      const permissao = await pedirPermissaoLocalizacao();
+      if (permissao !== 'concedida') {
+        haptics.aviso();
+        avisar(t('config.permissaoNecessaria'), mensagemPermissaoLocalizacao(permissao));
         return;
       }
     }
@@ -127,7 +134,7 @@ export default function Settings() {
     } catch (error) {
       console.error('Erro ao salvar preferência de localização:', error);
       haptics.erro();
-      Alert.alert(t('comum.erro'), t('config.erroLocalizacao'));
+      avisar(t('comum.erro'), t('config.erroLocalizacao'));
       setIsLocationEnabled(!value);
     }
   };

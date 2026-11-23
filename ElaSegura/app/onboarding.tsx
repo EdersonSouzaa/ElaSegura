@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import * as Location from 'expo-location';
+import { pedirPermissaoLocalizacao } from '../lib/localizacao';
 import * as Notifications from 'expo-notifications';
 import { Colors, type ThemeColors } from '../constants/theme';
 import { Fonts } from '../constants/globalFont';
@@ -98,8 +98,7 @@ export default function Onboarding() {
   const pedirLocalizacao = async () => {
     haptics.acao();
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      const concedida = status === 'granted';
+      const concedida = (await pedirPermissaoLocalizacao()) === 'concedida';
       setLocalizacaoOk(concedida);
       if (concedida) haptics.sucesso();
     } catch {

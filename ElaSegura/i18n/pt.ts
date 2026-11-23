@@ -519,6 +519,10 @@ export const pt = {
     permissaoNecessaria: 'Permissão necessária',
     permissaoLocalizacaoTexto:
       'Para ativar a localização em tempo real, é preciso permitir o acesso à localização nas configurações do seu celular.',
+    permissaoLocalizacaoWeb:
+      'O navegador bloqueou o acesso à localização. Clique no ícone de cadeado ao lado do endereço do site, permita a localização e tente de novo.',
+    localizacaoIndisponivel:
+      'Não foi possível acessar a localização neste navegador. Use um navegador atualizado e abra o site pelo endereço https.',
     erroNotificacoes: 'Não foi possível atualizar a preferência de notificações.',
     erroLocalizacao: 'Não foi possível atualizar a preferência de localização.',
     erroRaio: 'Não foi possível salvar o raio de alerta.',

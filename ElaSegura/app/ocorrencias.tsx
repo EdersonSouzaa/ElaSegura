@@ -25,6 +25,7 @@ import { BackHomeButton } from '../components/BackHomeButton';
 import { SuccessPopup } from '../components/SuccessPopup';
 import { ValidacaoRelato } from '../components/ValidacaoRelato';
 import { haptics } from '../lib/haptics';
+import { pedirPermissaoLocalizacao } from '../lib/localizacao';
 import { useLocation } from '../hooks/use-location';
 import {
   listarOcorrencias,
@@ -211,8 +212,7 @@ export default function Ocorrencias() {
 
         if (lat == null || lng == null) {
           try {
-            const { status } = await Location.requestForegroundPermissionsAsync();
-            if (status === 'granted') {
+            if ((await pedirPermissaoLocalizacao()) === 'concedida') {
               const ultima = await Location.getLastKnownPositionAsync({});
               const loc =
                 ultima ?? (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }));

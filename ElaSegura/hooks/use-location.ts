@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import * as Location from 'expo-location';
+import { pedirPermissaoLocalizacao } from '../lib/localizacao';
 
 export type Coords = { latitude: number; longitude: number };
 
@@ -21,8 +22,9 @@ export function useLocation(): UseLocationResult {
     let cancelled = false;
 
     (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
+      // Helper próprio em vez do expo-location direto: na web o pedido do
+      // expo-location falha em alguns navegadores (ver lib/localizacao.ts).
+      if ((await pedirPermissaoLocalizacao()) !== 'concedida') {
         if (!cancelled) {
           setErrorMsg('Permissão de localização negada');
           setLoading(false);
