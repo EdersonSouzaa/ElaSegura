@@ -1,33 +1,22 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Modal, Linking, Alert, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { Colors } from '../constants/theme';
 import { EMERGENCY_NUMBERS, DEFAULT_EMERGENCY_NUMBER } from '../constants/emergencyNumbers';
 import { useI18n } from '../context/I18nContext';
-import { haptics } from '../lib/haptics';
 
 type Props = {
   visible: boolean;
   onClose: () => void;
 };
 
-// Folha de ligação de emergência reutilizada na Home e no SOS 
+// Folha com os números de emergência, reutilizada na Home e no SOS.
+// Os itens são só informativos (não ligam ao tocar); apenas "Fechar" é clicável.
 export const EmergencyCallSheet = ({ visible, onClose }: Props) => {
-  const { isDarkMode, theme } = useTheme();
+  const { theme } = useTheme();
   const { t } = useI18n();
   const colors = Colors[theme];
-
-  const call = async (number: string) => {
-    haptics.acao();
-    try {
-      await Linking.openURL(`tel:${number}`);
-      onClose();
-    } catch {
-      haptics.erro();
-      Alert.alert(t('emergencia.naoFoiPossivel'), t('emergencia.disqueManualmente', { numero: number }));
-    }
-  };
 
   const others = EMERGENCY_NUMBERS.filter((n) => !n.primary);
   const primary = DEFAULT_EMERGENCY_NUMBER;
@@ -62,12 +51,10 @@ export const EmergencyCallSheet = ({ visible, onClose }: Props) => {
             </Text>
           </View>
 
-          {/* Ação principal (one-tap): 180 - Central da Mulher */}
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => call(primary.number)}
-            accessibilityRole="button"
-            accessibilityLabel={t('a11y.ligarPara', { nome: `${t(primary.chaveRotulo)}, ${primary.number}` })}
+          {/* Destaque: 180 - Central da Mulher (apenas informativo) */}
+          <View
+            accessible
+            accessibilityLabel={`${t(primary.chaveRotulo)}, ${primary.number}`}
             style={{
               flexDirection: 'row',
               alignItems: 'center',
@@ -80,12 +67,9 @@ export const EmergencyCallSheet = ({ visible, onClose }: Props) => {
             <MaterialCommunityIcons name={primary.icon} size={30} color="#FFFFFF" />
             <View style={{ flex: 1, marginLeft: 14 }}>
               <Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 }}>{t(primary.chaveRotulo)}</Text>
-              <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13 }}>
-                {t('emergencia.ligarPara', { numero: primary.number })}
-              </Text>
+              <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13 }}>{primary.number}</Text>
             </View>
-            <MaterialCommunityIcons name="phone" size={26} color="#FFFFFF" />
-          </TouchableOpacity>
+          </View>
 
           <Text style={{ fontSize: 13, fontWeight: '600', color: colors.secondary, marginBottom: 8 }}>
             {t('emergencia.outrosServicos')}
@@ -93,12 +77,10 @@ export const EmergencyCallSheet = ({ visible, onClose }: Props) => {
 
           <ScrollView style={{ maxHeight: 260 }} showsVerticalScrollIndicator={false}>
             {others.map((item) => (
-              <TouchableOpacity
+              <View
                 key={item.number}
-                activeOpacity={0.7}
-                onPress={() => call(item.number)}
-                accessibilityRole="button"
-                accessibilityLabel={t('a11y.ligarPara', { nome: `${t(item.chaveRotulo)}, ${item.number}` })}
+                accessible
+                accessibilityLabel={`${t(item.chaveRotulo)}, ${item.number}`}
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
@@ -124,8 +106,7 @@ export const EmergencyCallSheet = ({ visible, onClose }: Props) => {
                   <Text style={{ color: colors.text, fontWeight: '600', fontSize: 15 }}>{t(item.chaveRotulo)}</Text>
                   <Text style={{ color: colors.secondary, fontSize: 13 }}>{item.number}</Text>
                 </View>
-                <MaterialCommunityIcons name="phone-outline" size={22} color={colors.secondary} />
-              </TouchableOpacity>
+              </View>
             ))}
           </ScrollView>
 

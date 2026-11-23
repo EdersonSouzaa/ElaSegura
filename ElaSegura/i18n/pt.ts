@@ -378,7 +378,7 @@ export const pt = {
 
   emergencia: {
     titulo: 'Ligar para emergência',
-    subtitulo: 'Toque para ligar agora para a Central da Mulher ou escolha outro serviço.',
+    subtitulo: 'Números de atendimento para você discar no seu telefone.',
     outrosServicos: 'Outros serviços',
     ligarPara: 'Ligar para {numero}',
     naoFoiPossivel: 'Não foi possível ligar',

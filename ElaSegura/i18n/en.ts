@@ -378,7 +378,7 @@ export const en: Dicionario = {
 
   emergencia: {
     titulo: 'Call emergency services',
-    subtitulo: 'Tap to call the women’s hotline now, or pick another service.',
+    subtitulo: 'Helpline numbers for you to dial on your phone.',
     outrosServicos: 'Other services',
     ligarPara: 'Call {numero}',
     naoFoiPossivel: 'Could not place the call',
