@@ -6,7 +6,10 @@ service cloud.firestore {
     function dona(uid) { return request.auth != null && request.auth.uid == uid; }
 
     match /usuarios/{uid} {
-      allow read: if logada();
+      // Cada usuaria le so o proprio perfil (nome, e-mail, preferencias).
+      // Antes qualquer conta logada lia o perfil de todas. O app nao precisa
+      // ler perfis alheios: o nome da autora ja vai copiado em cada relato.
+      allow read: if dona(uid);
       allow create, update: if dona(uid);
       allow delete: if false;
 
